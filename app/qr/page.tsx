@@ -191,17 +191,17 @@ export default function QRMenu() {
                                         <div className="text-sm font-bold text-gray-500">
                                             {new Date(order.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                                         </div>
-                                        <div className={\`text-xs font-black px-2 py-1 rounded-full \${
+                                        <div className={`text-xs font-black px-2 py-1 rounded-full ${
                                             order.status === 'bekliyor' ? 'bg-orange-100 text-orange-600' :
                                             order.status === 'iptal' ? 'bg-red-100 text-red-600' :
                                             'bg-green-100 text-green-600'
-                                        }\`}>
+                                        }`}>
                                             {order.status === 'bekliyor' ? 'MUTFAKTA BEKLİYOR' :
                                              order.status === 'iptal' ? 'İPTAL EDİLDİ' :
                                              'HAZIRLANIYOR'}
                                         </div>
                                     </div>
-                                    <ul className={\`space-y-1 \${order.status === 'iptal' ? 'opacity-50 line-through' : ''}\`}>
+                                    <ul className={`space-y-1 ${order.status === 'iptal' ? 'opacity-50 line-through' : ''}`}>
                                         {order.items.map((item: any, iIdx: number) => (
                                             <li key={iIdx} className="text-sm font-bold text-gray-800">
                                                 <span className="text-brand-red mr-1">{item.qty}x</span> {item.name}
