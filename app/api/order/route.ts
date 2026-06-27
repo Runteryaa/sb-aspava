@@ -20,6 +20,8 @@ export async function POST(request: Request) {
             timestamp: new Date().toISOString()
         };
 
+        if (!db.pendingOrders) db.pendingOrders = [];
+        
         db.tables[tableId].orders.push(newOrder);
         db.pendingOrders.push(newOrder);
 

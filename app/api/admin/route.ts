@@ -10,6 +10,7 @@ export async function GET() {
     try {
         let db: any = await redis.get('aspava:tables');
         if (!db) db = { tables: {}, pendingOrders: [] };
+        if (!db.pendingOrders) db.pendingOrders = [];
         return NextResponse.json(db);
     } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
         const { action, tableId, orderId } = await request.json();
         let db: any = await redis.get('aspava:tables');
         if (!db) return NextResponse.json({ error: 'DB error' }, { status: 500 });
+        if (!db.pendingOrders) db.pendingOrders = [];
 
         if (action === 'close_table' && tableId) {
             db.tables[tableId].sessionId = null;
