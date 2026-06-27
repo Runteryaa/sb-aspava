@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
 
 function generateUUID() {
-    return Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
+    return Math.random().toString(36).substr(2, 9) + '_' + Math.floor(Date.now() / 3).toString(36);
 }
 
 export async function POST(request: Request) {
