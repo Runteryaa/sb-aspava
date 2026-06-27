@@ -21,6 +21,7 @@ export async function POST(request: Request) {
         if (!tableId) {
             const targetSession = urlSessionId || sessionId;
             if (!targetSession) {
+                if (dbChanged) await redis.set('aspava:tables', db);
                 return NextResponse.json({ error: 'Geçersiz oturum.' }, { status: 400 });
             }
             let foundTableId = null;
@@ -31,19 +32,33 @@ export async function POST(request: Request) {
                 }
             }
             if (foundTableId) {
-                if (dbChanged) await redis.set('aspava:tables', db);
-                return NextResponse.json({ 
-                    success: true, 
-                    tableId: foundTableId,
-                    joinedSessionId: targetSession, 
-                    orders: db.tables[foundTableId].orders 
-                });
+                // Eğer kişinin cookie'si session ile aynıysa (zaten önceden doğrulanmışsa)
+                if (sessionId === targetSession) {
+                    if (dbChanged) await redis.set('aspava:tables', db);
+                    return NextResponse.json({ 
+                        success: true, 
+                        tableId: foundTableId,
+                        joinedSessionId: targetSession, 
+                        orders: db.tables[foundTableId].orders 
+                    });
+                }
+                
+                // Eğer cookie'si yoksa ama linkten geliyorsa (başkasının linkiyle girmeye çalışıyorsa)
+                if (locationVerified) {
+                    if (dbChanged) await redis.set('aspava:tables', db);
+                    return NextResponse.json({ success: true, tableId: foundTableId, joinedSessionId: targetSession, orders: db.tables[foundTableId].orders });
+                } else {
+                    if (dbChanged) await redis.set('aspava:tables', db);
+                    return NextResponse.json({ requireLocation: true });
+                }
             } else {
+                if (dbChanged) await redis.set('aspava:tables', db);
                 return NextResponse.json({ error: 'Bu oturum kapatılmış veya geçersiz.' }, { status: 404 });
             }
         }
 
         if (!db.tables[tableId]) {
+            if (dbChanged) await redis.set('aspava:tables', db);
             return NextResponse.json({ error: 'Masa bulunamadı' }, { status: 404 });
         }
 
@@ -57,14 +72,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, tableId, joinedSessionId: newSession, orders: [] });
         }
 
-        // Eğer masa doluysa ve gelen kişinin çerezi (cookie) eşleşiyorsa VEYA url'deki (s) parametresi eşleşiyorsa:
+        // Eğer masa doluysa ve gelen kişinin çerezi (cookie) eşleşiyorsa
         // Konum gerekmez, zaten içeride
-        if (db.tables[tableId].sessionId === sessionId || (urlSessionId && db.tables[tableId].sessionId === urlSessionId)) {
+        if (db.tables[tableId].sessionId === sessionId) {
             if (dbChanged) await redis.set('aspava:tables', db);
             return NextResponse.json({ success: true, tableId, joinedSessionId: db.tables[tableId].sessionId, orders: db.tables[tableId].orders });
         }
 
-        // Eğer masa doluysa ama gelen kişinin çerezi farklıysa/yoksa (Masaya sonradan dahil olan kişi)
+        // Eğer masa doluysa ama gelen kişinin çerezi farklıysa/yoksa (Masaya sonradan dahil olan kişi veya link ile giren)
         if (locationVerified) {
             // Konum doğrulandıysa girişine izin ver
             if (dbChanged) await redis.set('aspava:tables', db);

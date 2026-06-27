@@ -133,13 +133,17 @@ export default function QRMenu() {
         // İlk yükleme (masa varsa masa id'si ile, yoksa null göndererek sadece session id ile kontrol et)
         checkTableSession(t || null, localSession, s);
         
-        // Polling (Her 5 saniyede bir sipariş durumunu güncelle)
+        // Polling (Her 15 saniyede bir sipariş durumunu güncelle - Sadece başarılı giriş yaptıysa)
         const interval = setInterval(() => {
             const currentSession = getCookie('aspava_session');
             const currentS = new URLSearchParams(window.location.search).get('s');
-            // Polling sırasında masa ID göndermiyoruz ki backend sadece session ID'den masayı bulsun (masa taşıma durumu için)
-            checkTableSession(null, currentSession, currentS);
-        }, 5000);
+            
+            // Eğer session yoksa (henüz girmediyse veya konum onaylamadıysa) poll yapma
+            if (currentSession || currentS) {
+                // Polling sırasında masa ID göndermiyoruz ki backend sadece session ID'den masayı bulsun
+                checkTableSession(null, currentSession, currentS);
+            }
+        }, 15000);
         
         return () => clearInterval(interval);
     }, []);
