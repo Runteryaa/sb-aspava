@@ -201,8 +201,15 @@ export default function QRMenu() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-brand-light text-center p-6">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-brand-red mb-6"></div>
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Konum Doğrulanıyor...</h2>
-                <p className="text-gray-500 mt-2 font-medium max-w-xs mx-auto">Sipariş menüsüne erişmek için lütfen tarayıcınızın konum izni isteğini onaylayın.</p>
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Güvenlik Kontrolü</h2>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-sm mt-4">
+                    <p className="text-gray-700 font-medium mb-3">Bu masaya <span className="font-bold text-brand-red">sonradan dahil olduğunuz için</span> sahte siparişleri engellemek amacıyla konum onayı gerekmektedir.</p>
+                    <p className="text-gray-500 text-sm mb-3">Not: Masadaki QR kodu okutan <span className="font-bold">İLK</span> kişi, hiçbir konum izni olmadan menüye direkt erişebilir.</p>
+                    <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 p-2 rounded-lg font-bold">
+                        <i className="fa-solid fa-shield-halved"></i>
+                        <span>Konum verileriniz asla kaydedilmez ve güvendedir.</span>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -215,7 +222,14 @@ export default function QRMenu() {
                         <i className="fa-solid fa-location-crosshairs"></i>
                     </div>
                     <h2 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">Konum İzni Gerekli</h2>
-                    <p className="text-gray-600 font-medium">Bu menüye sadece restoran içerisinden erişilebilir. Lütfen tarayıcı ayarlarından konum erişimine izin verip sayfayı yenileyin.</p>
+                    <p className="text-gray-600 font-medium mb-4">Açık bir masaya dahil olabilmeniz için restoranda olduğunuzu doğrulamamız gerekiyor.</p>
+                    <p className="text-gray-500 text-sm mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        Masadaki QR kodu okutan <span className="font-bold text-gray-800">İLK</span> kişi olursanız konum izni olmadan sipariş verebilirsiniz. Lütfen tarayıcı ayarlarınızdan izin verin veya masayı ilk açan kişi olmayı deneyin.
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-xs text-green-600 font-bold">
+                        <i className="fa-solid fa-shield-halved"></i>
+                        <span>Konumunuz kaydedilmez.</span>
+                    </div>
                 </div>
             </div>
         );
