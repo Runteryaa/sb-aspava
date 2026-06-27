@@ -20,6 +20,8 @@ export default function Panel() {
 
     const [adminData, setAdminData] = useState<any>(null);
     const audioUnlockedRef = useRef(false);
+    const initialLoadRef = useRef(true);
+    const prevOrdersRef = useRef<Set<string>>(new Set());
 
     const unlockAudio = () => {
         if (audioUnlockedRef.current) return;
