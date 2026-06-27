@@ -25,12 +25,12 @@ export async function POST(request: Request) {
             db.tables[tableId].sessionId = newSession;
             db.tables[tableId].orders = [];
             await redis.set('aspava:tables', db);
-            return NextResponse.json({ success: true, joinedSessionId: newSession });
+            return NextResponse.json({ success: true, joinedSessionId: newSession, orders: [] });
         }
 
         // Eğer masa doluysa ve gelen kişinin çerezi (cookie) eşleşiyorsa (masayı açan kişiyse):
         if (db.tables[tableId].sessionId === sessionId) {
-            return NextResponse.json({ success: true, joinedSessionId: db.tables[tableId].sessionId });
+            return NextResponse.json({ success: true, joinedSessionId: db.tables[tableId].sessionId, orders: db.tables[tableId].orders });
         }
 
         // Eğer masa doluysa ama gelen kişinin çerezi farklıysa/yoksa (troll veya başka bir telefon):

@@ -19,6 +19,30 @@ export default function QRMenu() {
     const [cart, setCart] = useState<{name: string, price: number, qty: number}[]>([]);
     const [cartOpen, setCartOpen] = useState(false);
     const [ordering, setOrdering] = useState(false);
+    const [myOrders, setMyOrders] = useState<any[]>([]);
+    
+    // API'den durumu kontrol eden fonksiyon
+    const checkTableSession = (tId: string, sId: string | null) => {
+        fetch('/api/table', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tableId: tId, sessionId: sId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                setErrorMsg(data.error);
+            } else if (data.joinedSessionId) {
+                // Set cookie for 12 hours
+                document.cookie = `aspava_session=${data.joinedSessionId}; max-age=${12 * 60 * 60}; path=/`;
+                setSessionId(data.joinedSessionId);
+                if (data.orders) {
+                    setMyOrders(data.orders);
+                }
+            }
+        })
+        .catch(() => setErrorMsg("Sunucuya bağlanılamadı."));
+    };
 
     useEffect(() => {
         // Load menu
@@ -47,22 +71,16 @@ export default function QRMenu() {
         };
         const localSession = getCookie('aspava_session');
 
-        fetch('/api/table', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tableId: t, sessionId: localSession })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                setErrorMsg(data.error);
-            } else if (data.joinedSessionId) {
-                // Set cookie for 12 hours
-                document.cookie = `aspava_session=${data.joinedSessionId}; max-age=${12 * 60 * 60}; path=/`;
-                setSessionId(data.joinedSessionId);
-            }
-        })
-        .catch(() => setErrorMsg("Sunucuya bağlanılamadı."));
+        // İlk yükleme
+        checkTableSession(t, localSession);
+        
+        // Polling (Her 5 saniyede bir sipariş durumunu güncelle)
+        const interval = setInterval(() => {
+            const currentSession = getCookie('aspava_session');
+            checkTableSession(t, currentSession);
+        }, 5000);
+        
+        return () => clearInterval(interval);
     }, []);
 
     const addToCart = (item: any) => {
@@ -92,6 +110,7 @@ export default function QRMenu() {
                 alert("Siparişiniz başarıyla alındı! Afiyet olsun.");
                 setCart([]);
                 setCartOpen(false);
+                checkTableSession(tableId, sessionId);
             }
         } catch (e) {
             alert("Bağlantı hatası.");
@@ -157,6 +176,44 @@ export default function QRMenu() {
 
             {/* Menu Content */}
             <main className="max-w-3xl mx-auto px-4 py-6 space-y-10">
+                
+                {/* Siparişlerim */}
+                {myOrders.length > 0 && (
+                    <section className="bg-white border-2 border-brand-red rounded-2xl p-4 shadow-sm mb-8">
+                        <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3">
+                            <i className="fa-solid fa-receipt text-brand-red text-xl"></i>
+                            <h2 className="text-xl font-black text-gray-900 tracking-tight">Siparişlerim & Durumları</h2>
+                        </div>
+                        <div className="space-y-4">
+                            {myOrders.map((order, idx) => (
+                                <div key={idx} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="text-sm font-bold text-gray-500">
+                                            {new Date(order.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                        <div className={\`text-xs font-black px-2 py-1 rounded-full \${
+                                            order.status === 'bekliyor' ? 'bg-orange-100 text-orange-600' :
+                                            order.status === 'iptal' ? 'bg-red-100 text-red-600' :
+                                            'bg-green-100 text-green-600'
+                                        }\`}>
+                                            {order.status === 'bekliyor' ? 'MUTFAKTA BEKLİYOR' :
+                                             order.status === 'iptal' ? 'İPTAL EDİLDİ' :
+                                             'HAZIRLANIYOR'}
+                                        </div>
+                                    </div>
+                                    <ul className={\`space-y-1 \${order.status === 'iptal' ? 'opacity-50 line-through' : ''}\`}>
+                                        {order.items.map((item: any, iIdx: number) => (
+                                            <li key={iIdx} className="text-sm font-bold text-gray-800">
+                                                <span className="text-brand-red mr-1">{item.qty}x</span> {item.name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 {Object.keys(menuData).map((categoryKey) => {
                     const category = menuData[categoryKey];
                     const config = categoryConfig[categoryKey] || { id: categoryKey, color: 'bg-gray-500', icon: 'fa-utensils' };
