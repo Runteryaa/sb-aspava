@@ -19,9 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="twitter:title" content="SB Aspava | Efsane Lezzetler" />
         <meta name="twitter:description" content="Ankara Türkkonut'ta odun ateşinde efsane lezzetler. SB Aspava ile nefis kebaplar, pideler ve lahmacunlar için hemen sipariş verin." />
         <link rel="canonical" href="https://sbaspava.com" />
-        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=3" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png?v=3" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
         
         <script src="https://cdn.tailwindcss.com"></script>
         <script dangerouslySetInnerHTML={{__html: `
