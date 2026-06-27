@@ -92,7 +92,14 @@ export default function Panel() {
         if (isAuthenticated) {
             fetchMenu();
             fetchAdminData();
-            const interval = setInterval(fetchAdminData, 5000); // Poll orders every 5s
+            // Web Worker ile arka planda yavaşlamayan polling
+            const worker = new Worker('/worker.js');
+            worker.onmessage = (e) => {
+                if (e.data === 'tick') {
+                    fetchAdminData();
+                }
+            };
+            worker.postMessage('start');
             
             // Check saved theme
             if (localStorage.getItem('theme') === 'dark') {
@@ -101,7 +108,10 @@ export default function Panel() {
             if (localStorage.getItem('volume') !== null) {
                 setVolume(parseFloat(localStorage.getItem('volume')!));
             }
-            return () => clearInterval(interval);
+            return () => {
+                worker.postMessage('stop');
+                worker.terminate();
+            };
         }
     }, [isAuthenticated]);
 
