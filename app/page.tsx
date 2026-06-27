@@ -215,7 +215,7 @@ export default function Page() {
     <!-- Logo Banner (Hero yerine kompakt başlık) -->
     <div class="hero-bg pt-16 sm:pt-20 border-b-4 border-brand-gold">
         <div class="max-w-7xl mx-auto px-4 py-6 sm:py-10 text-center fade-in relative z-10">
-            <a href="#" class="inline-flex flex-col items-center gap-1">
+            <a href="/" class="inline-flex flex-col items-center gap-1 hover:scale-105 transition-transform">
                 <h1 class="text-5xl sm:text-7xl font-logo text-white drop-shadow-lg" style="text-shadow: 2px 2px 0 #7f1d1d, 4px 4px 0 #000; letter-spacing: 3px;">SB Aspava</h1>
                 <h2 class="text-brand-gold font-black text-xs sm:text-sm uppercase tracking-widest mt-1">Odun Ateşinin Efsanesi &bull; Türkkonut, Ankara</h2>
             </a>

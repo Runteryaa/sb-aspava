@@ -147,9 +147,11 @@ export default function QRMenu() {
             <header className="sticky top-0 bg-white border-b-4 border-brand-red z-40 shadow-md">
                 <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
                     <div className="flex-shrink-0 flex items-center">
-                        <div className="text-2xl sm:text-4xl font-logo text-brand-red flex items-center gap-1.5 tracking-wide" style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 2px 2px 0 #000', letterSpacing: '1px' }}>
-                             SB Aspava
-                        </div>
+                        <a href="/" className="inline-block hover:scale-105 transition-transform">
+                            <h1 className="text-4xl font-logo text-brand-red tracking-wide drop-shadow-md" style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 2px 2px 0 #000' }}>
+                                 SB Aspava
+                            </h1>
+                        </a>
                     </div>
                     <div className="text-sm font-bold bg-gray-100 text-gray-800 px-4 py-2 rounded-full">
                         {tableId ? `Masa ${tableId}` : 'Sadece İnceleme'}
