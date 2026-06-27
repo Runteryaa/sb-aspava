@@ -149,7 +149,7 @@ export default function Panel() {
         return (
             <div className="min-h-screen bg-brand-light flex items-center justify-center p-4">
                 <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-4 border-brand-red">
-                    <h1 className="text-3xl font-black text-center text-gray-900 mb-6 font-logo tracking-wider text-brand-red">SB Aspava Yönetim</h1>
+                    <h1 className="text-4xl font-logo text-center text-brand-red mb-6 tracking-wide" style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 2px 2px 0 #000', letterSpacing: '1px' }}>SB Aspava Panel</h1>
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Yönetici Şifresi</label>
@@ -178,7 +178,7 @@ export default function Panel() {
             <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
                 
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-8 border-b pb-4 gap-4">
-                    <h1 className="text-3xl font-black text-gray-900 font-sans tracking-tight">Yönetim Paneli</h1>
+                    <h1 className="text-3xl sm:text-4xl font-logo text-brand-red tracking-wide" style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 2px 2px 0 #000', letterSpacing: '1px' }}>SB Aspava Panel</h1>
                     <div className="flex bg-gray-100 p-1 rounded-lg">
                         <button 
                             onClick={() => setActiveTab('orders')}
