@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (!auth || auth.value !== 'true') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        const { action, tableId, orderId } = await request.json();
+        const { action, tableId, orderId, status } = await request.json();
         let db: any = await redis.get('aspava:tables');
         if (!db) return NextResponse.json({ error: 'DB error' }, { status: 500 });
         if (!db.pendingOrders) db.pendingOrders = [];
@@ -52,7 +52,13 @@ export async function POST(request: Request) {
                 const to = db.tables[tId].orders.find((o: any) => o.id === orderId);
                 if (to) to.status = 'iptal';
             }
+            }
             db.pendingOrders = db.pendingOrders.filter((o: any) => o.id !== orderId);
+        } else if (action === 'update_table_order' && tableId && orderId && status) {
+            if (db.tables[tableId]) {
+                const to = db.tables[tableId].orders.find((o: any) => o.id === orderId);
+                if (to) to.status = status;
+            }
         }
 
         await redis.set('aspava:tables', db);

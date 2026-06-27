@@ -316,6 +316,14 @@ export default function Panel() {
                                                                         <div key={iIdx} className="font-medium text-sm text-gray-800">• {i.qty}x {i.name}</div>
                                                                     ))}
                                                                 </div>
+                                                                {order.status !== 'iptal' && (
+                                                                    <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
+                                                                        {order.status === 'onaylandi' && (
+                                                                            <button onClick={() => handleAction('update_table_order', { tableId, orderId: order.id, status: 'hazir' })} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded font-bold shadow-sm">Hazır (Servis Edildi)</button>
+                                                                        )}
+                                                                        <button onClick={() => handleAction('update_table_order', { tableId, orderId: order.id, status: 'iptal' })} className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded font-bold shadow-sm">İptal Et</button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         ))}
                                                         {table.orders.length === 0 && <span className="text-sm text-gray-400">Henüz sipariş yok. Menüye bakıyorlar...</span>}

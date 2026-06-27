@@ -194,10 +194,12 @@ export default function QRMenu() {
                                         <div className={`text-xs font-black px-2 py-1 rounded-full ${
                                             order.status === 'bekliyor' ? 'bg-orange-100 text-orange-600' :
                                             order.status === 'iptal' ? 'bg-red-100 text-red-600' :
+                                            order.status === 'hazir' ? 'bg-blue-100 text-blue-600' :
                                             'bg-green-100 text-green-600'
                                         }`}>
                                             {order.status === 'bekliyor' ? 'MUTFAKTA BEKLİYOR' :
                                              order.status === 'iptal' ? 'İPTAL EDİLDİ' :
+                                             order.status === 'hazir' ? 'AFİYET OLSUN (Servis Edildi)' :
                                              'HAZIRLANIYOR'}
                                         </div>
                                     </div>
