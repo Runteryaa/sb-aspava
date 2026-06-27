@@ -183,10 +183,10 @@ export default function Panel() {
         );
     }
 
-    if (menuLoading || !adminData) return <div className="p-10 text-center text-xl flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div></div>;
+    if (menuLoading || !adminData) return <div className="text-center text-xl flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div></div>;
 
     return (
-        <div className={`min-h-screen py-10 px-4 transition-colors duration-300 ${darkMode ? 'midnight-dark' : 'bg-gray-50'}`}>
+        <div className={`min-h-screen py-2 px-4 transition-colors duration-300 ${darkMode ? 'midnight-dark' : 'bg-gray-50'}`}>
             <div className="max-w-5xl mx-auto panel-container rounded-2xl shadow-sm border p-6 md:p-8 transition-colors duration-300">
                 
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-8 border-b pb-4 gap-4 panel-header">
@@ -315,7 +315,7 @@ export default function Panel() {
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="text-xl font-black">Masa {tableId}</h3>
                                                 {isActive ? (
-                                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Dolu (Oturum Açık)</span>
+                                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Dolu</span>
                                                 ) : (
                                                     <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-bold">Boş</span>
                                                 )}
@@ -351,7 +351,7 @@ export default function Panel() {
                                                                 {order.status !== 'iptal' && (
                                                                     <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
                                                                         {order.status === 'onaylandi' && (
-                                                                            <button onClick={() => handleAction('update_table_order', { tableId, orderId: order.id, status: 'hazir' })} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded font-bold shadow-sm">Hazır (Servis Edildi)</button>
+                                                                            <button onClick={() => handleAction('update_table_order', { tableId, orderId: order.id, status: 'hazir' })} className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded font-bold shadow-sm">Hazır</button>
                                                                         )}
                                                                         <button onClick={() => { if(window.confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) handleAction('update_table_order', { tableId, orderId: order.id, status: 'iptal' }) }} className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded font-bold shadow-sm">İptal Et</button>
                                                                     </div>
@@ -361,10 +361,10 @@ export default function Panel() {
                                                         {table.orders.length === 0 && <span className="text-sm text-gray-400">Henüz sipariş yok. Menüye bakıyorlar...</span>}
                                                     </div>
                                                     <button 
-                                                        onClick={() => { if(confirm(`Masa ${tableId} hesabını kapatmak ve masayı boşaltmak istediğine emin misin?`)) handleAction('close_table', { tableId }) }}
+                                                        onClick={() => { if(confirm(`Masa ${tableId} adisyonunu kapatmak istediğine emin misin?`)) handleAction('close_table', { tableId }) }}
                                                         className="w-full bg-gray-800 text-white font-bold py-2 rounded-lg hover:bg-gray-900"
                                                     >
-                                                        Hesabı Kapat / Masayı Temizle
+                                                        Adisyonu Kapat
                                                     </button>
                                                 </>
                                             )}
