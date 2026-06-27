@@ -39,13 +39,37 @@ export default function Panel() {
         document.addEventListener('click', unlockAudio, { once: true });
         
         if (adminData && adminData.pendingOrders) {
+            const currentPending = adminData.pendingOrders.filter((o:any) => o.status === 'bekliyor');
+            
+            if (!initialLoadRef.current) {
+                const hasNewOrder = currentPending.some((o:any) => !prevOrdersRef.current.has(o.id));
+                if (hasNewOrder) {
+                    const vol = parseFloat(localStorage.getItem('volume') || '1');
+                    if (vol > 0) {
+                        const el = document.getElementById('notificationSound') as HTMLAudioElement;
+                        if (el) {
+                            if (!el.paused) el.currentTime = 0;
+                            else {
+                                el.volume = vol;
+                                el.currentTime = 0;
+                                el.play().catch(()=>{});
+                            }
+                        }
+                    }
+                }
+            } else {
+                initialLoadRef.current = false;
+            }
+            
             // Sadece başlık bilgisini güncelle (opsiyonel)
-            const pendingCount = adminData.pendingOrders.filter((o:any) => o.status === 'bekliyor').length;
+            const pendingCount = currentPending.length;
             if (pendingCount > 0) {
                 document.title = `(${pendingCount}) Yeni Sipariş! - Aspava`;
             } else {
                 document.title = 'SB Aspava Panel';
             }
+            
+            prevOrdersRef.current = new Set(currentPending.map((o:any) => o.id));
         }
     }, [adminData]);
 
@@ -110,17 +134,7 @@ export default function Panel() {
 
             const channel = pusher.subscribe('admin-channel');
             channel.bind('new-order', function(data: any) {
-                // Sesi çal
-                const vol = parseFloat(localStorage.getItem('volume') || '1');
-                if (vol > 0) {
-                    const el = document.getElementById('notificationSound') as HTMLAudioElement;
-                    if (el) {
-                        el.volume = vol;
-                        el.currentTime = 0;
-                        el.play().catch(e => console.error("Pusher Audio Error:", e));
-                    }
-                }
-                // Verileri yenile
+                // Verileri yenile (Ses zaten useEffect tarafından otomatik çalınacak)
                 fetchAdminData();
             });
 
