@@ -32,7 +32,7 @@ export default function QRMenu() {
         const t = searchParams.get('masa');
 
         if (!t) {
-            setErrorMsg("Geçersiz QR kod. Lütfen masanızdaki karekodu okutun.");
+            // Sadece menüyü görüntüleme modu
             return;
         }
 
@@ -114,7 +114,7 @@ export default function QRMenu() {
         );
     }
 
-    if (!menuData || !sessionId) {
+    if (!menuData || (tableId && !sessionId)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-brand-light">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
@@ -133,7 +133,7 @@ export default function QRMenu() {
                         </div>
                     </div>
                     <div className="text-sm font-bold bg-gray-100 text-gray-800 px-4 py-2 rounded-full">
-                        Masa {tableId}
+                        {tableId ? `Masa ${tableId}` : 'Sadece İnceleme'}
                     </div>
                 </div>
                 
@@ -179,12 +179,14 @@ export default function QRMenu() {
                                         {item.price && (
                                             <div className="flex flex-col items-end gap-2">
                                                 <div className="font-black text-brand-red text-lg whitespace-nowrap">{item.price} TL</div>
-                                                <button 
-                                                    onClick={() => addToCart(item)}
-                                                    className="bg-brand-red text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
-                                                >
-                                                    <i className="fa-solid fa-plus mr-1"></i> Ekle
-                                                </button>
+                                                {tableId && (
+                                                    <button 
+                                                        onClick={() => addToCart(item)}
+                                                        className="bg-brand-red text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
+                                                    >
+                                                        <i className="fa-solid fa-plus mr-1"></i> Ekle
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
