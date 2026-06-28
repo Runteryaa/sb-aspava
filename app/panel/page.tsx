@@ -207,6 +207,24 @@ export default function Panel() {
         localStorage.setItem('theme', newMode ? 'dark' : 'light');
     };
 
+    const handleCategoryTitleChange = (categoryKey: string, newTitle: string) => {
+        const newData = { ...menuData };
+        newData[categoryKey].title = newTitle;
+        setMenuData(newData);
+    };
+
+    const handleItemNameChange = (categoryKey: string, itemIndex: number, newName: string) => {
+        const newData = { ...menuData };
+        newData[categoryKey].items[itemIndex].name = newName;
+        setMenuData(newData);
+    };
+
+    const handleItemDescChange = (categoryKey: string, itemIndex: number, newDesc: string) => {
+        const newData = { ...menuData };
+        newData[categoryKey].items[itemIndex].desc = newDesc;
+        setMenuData(newData);
+    };
+
     const handlePriceChange = (categoryKey: string, itemIndex: number, newPrice: string) => {
         const newData = { ...menuData };
         newData[categoryKey].items[itemIndex].price = newPrice;
@@ -447,13 +465,32 @@ export default function Panel() {
                                     <button onClick={() => handleDeleteCategory(categoryKey)} className="absolute top-4 right-4 text-red-500 hover:text-red-700 font-bold text-sm">
                                         Kategoriyi Sil
                                     </button>
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">{category.title}</h2>
+                                    <div className="mb-6 border-b pb-2">
+                                        <input 
+                                            type="text" 
+                                            value={category.title} 
+                                            onChange={(e) => handleCategoryTitleChange(categoryKey, e.target.value)}
+                                            className="text-2xl font-bold text-gray-800 bg-transparent border border-transparent hover:border-gray-200 focus:border-brand-red outline-none w-full rounded px-2 -ml-2 focus:ring-0"
+                                            placeholder="Kategori Adı"
+                                        />
+                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         {category.items.map((item: any, index: number) => (
-                                            <div key={index} className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 relative group">
-                                                <div className="flex-1 pr-4">
-                                                    <h3 className="font-bold text-gray-900">{item.name}</h3>
-                                                    <p className="text-xs text-gray-500 line-clamp-1">{item.desc}</p>
+                                            <div key={index} className="flex justify-between items-start bg-white p-4 rounded-lg shadow-sm border border-gray-100 relative group">
+                                                <div className="flex-1 pr-4 flex flex-col gap-1">
+                                                    <input 
+                                                        type="text"
+                                                        value={item.name}
+                                                        onChange={(e) => handleItemNameChange(categoryKey, index, e.target.value)}
+                                                        className="font-bold text-gray-900 bg-transparent border border-transparent hover:border-gray-200 focus:border-brand-red outline-none w-full rounded px-1 -ml-1"
+                                                        placeholder="Ürün Adı"
+                                                    />
+                                                    <textarea 
+                                                        value={item.desc}
+                                                        onChange={(e) => handleItemDescChange(categoryKey, index, e.target.value)}
+                                                        className="text-xs text-gray-500 bg-transparent border border-transparent hover:border-gray-200 focus:border-brand-red outline-none w-full rounded px-1 -ml-1 resize-y min-h-[40px] leading-tight"
+                                                        placeholder="Açıklama / İçindekiler"
+                                                    />
                                                     <label className="flex items-center gap-2 mt-2 text-xs font-bold text-gray-700 cursor-pointer">
                                                         <input 
                                                             type="checkbox" 
