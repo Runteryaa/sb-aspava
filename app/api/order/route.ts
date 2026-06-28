@@ -43,7 +43,8 @@ export async function POST(request: Request) {
                 key: process.env.NEXT_PUBLIC_PUSHER_KEY || "3e97c3f16351fdefca9e",
                 secret: process.env.PUSHER_SECRET || "6a4c9dbea9006d6f755b",
                 cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu",
-                useTLS: true
+                useTLS: true,
+                useFetch: true
             });
             await pusher.trigger("admin-channel", "new-order", {
                 orderId: newOrder.id,
