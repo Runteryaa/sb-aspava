@@ -1,14 +1,37 @@
 {
   "name": "aspava-print-server",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Local print server for Aspava that generates PDF receipts",
-  "main": "index.js",
+  "author": "SB Aspava",
+  "main": "main.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "electron .",
+    "build": "electron-builder -w"
+  },
+  "build": {
+    "appId": "com.kirosyapanel.app",
+    "productName": "KirosyaPanel",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": false,
+      "include": "installer.nsh"
+    }
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "electron-updater": "^6.3.9",
     "express": "^4.19.2",
     "pdfkit": "^0.15.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
   }
 }

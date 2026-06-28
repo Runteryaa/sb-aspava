@@ -8,10 +8,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const receiptsDir = path.join(__dirname, 'receipts');
+const receiptsDir = 'C:\\KirosyaPanel\\receipts';
+
+// Klasör yoksa oluştur
+if (!fs.existsSync('C:\\KirosyaPanel')) {
+    fs.mkdirSync('C:\\KirosyaPanel');
+}
 if (!fs.existsSync(receiptsDir)) {
     fs.mkdirSync(receiptsDir);
 }
+
+// Update check (mock)
+const APP_VERSION = "0.0.1";
+console.log(`KirosyaPanel v${APP_VERSION} Başlatılıyor...`);
 
 const replaceTrChars = (text) => {
     if (!text) return text;
