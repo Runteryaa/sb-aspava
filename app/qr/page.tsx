@@ -115,7 +115,17 @@ export default function QRMenu() {
             }
         });
 
+        // Pusher Edge Runtime'da tetiklenmezse diye 3 saniyede bir manuel kontrol edelim (Polling)
+        const fallbackInterval = setInterval(() => {
+            const currentT = new URLSearchParams(window.location.search).get('masa');
+            const currentS = new URLSearchParams(window.location.search).get('s') || getCookie('aspava_session');
+            if (currentT || currentS || t || s || localSession) {
+                checkTableSession(currentT || t || null, currentS || localSession || null, currentS || s || null);
+            }
+        }, 3000);
+
         return () => {
+            clearInterval(fallbackInterval);
             pusher.unsubscribe('qr-channel');
         };
     }, []);
