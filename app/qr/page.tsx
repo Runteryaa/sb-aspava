@@ -20,83 +20,41 @@ export default function QRMenu() {
     const [cartOpen, setCartOpen] = useState(false);
     const [ordering, setOrdering] = useState(false);
     const [myOrders, setMyOrders] = useState<any[]>([]);
-    const [tableJoinCode, setTableJoinCode] = useState<string | null>(null);
-    const [pinInput, setPinInput] = useState<string>('');
-    
-    const [locationStatus, setLocationStatus] = useState<'allowed' | 'checking' | 'denied' | 'too_far'>('allowed');
-    const [distanceStr, setDistanceStr] = useState<string>('');
-
-    const RESTAURANT_LAT = 39.8291886;
-    const RESTAURANT_LON = 32.6617336;
-    const MAX_DISTANCE_M = 500;
-
-    const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const R = 6371e3; // metres
-        const f1 = lat1 * Math.PI/180;
-        const f2 = lat2 * Math.PI/180;
-        const df = (lat2-lat1) * Math.PI/180;
-        const dl = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(df/2) * Math.sin(df/2) +
-                  Math.cos(f1) * Math.cos(f2) *
-                  Math.sin(dl/2) * Math.sin(dl/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
-    };
+    const [isReadOnly, setIsReadOnly] = useState<boolean>(false);
     
     // API'den durumu kontrol eden fonksiyon
-    const checkTableSession = (tId: string | null, sId: string | null, urlSession: string | null = null, locationVerified: boolean = false, pinCode: string | null = null) => {
+    const checkTableSession = (tId: string | null, sId: string | null, urlSession: string | null = null) => {
         fetch('/api/table', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tableId: tId, sessionId: sId, urlSessionId: urlSession, locationVerified, pinCode })
+            body: JSON.stringify({ tableId: tId, sessionId: sId, urlSessionId: urlSession })
         })
         .then(res => res.json())
         .then(data => {
-            if (data.requireLocation) {
-                // Masaya sonradan dahil olan biri, konum doğrulaması gerekiyor
-                setLocationStatus('checking');
-                if (!navigator.geolocation) {
-                    setLocationStatus('denied');
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        const dist = getDistance(pos.coords.latitude, pos.coords.longitude, RESTAURANT_LAT, RESTAURANT_LON);
-                        setDistanceStr(Math.round(dist).toString() + "m");
-                        if (dist <= MAX_DISTANCE_M) {
-                            // Konum doğrulandı, tekrar giriş dene
-                            checkTableSession(tId, sId, urlSession, true);
-                        } else {
-                            setLocationStatus('too_far');
-                        }
-                    },
-                    (err) => {
-                        setLocationStatus('denied');
-                    },
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                );
-            } else if (data.error) {
+            if (data.error) {
                 setErrorMsg(data.error);
-            } else if (data.joinedSessionId) {
-                setLocationStatus('allowed');
-                // Set cookie for 12 hours
-                document.cookie = `aspava_session=${data.joinedSessionId}; max-age=${12 * 60 * 60}; path=/`;
-                setSessionId(data.joinedSessionId);
-                if (data.joinCode) {
-                    setTableJoinCode(data.joinCode);
+            } else if (data.success) {
+                if (data.isOwner) {
+                    // Masayı ilk açan kişi
+                    setIsReadOnly(false);
+                    // Set cookie for 12 hours
+                    document.cookie = `aspava_session=${data.joinedSessionId}; max-age=${12 * 60 * 60}; path=/`;
+                    setSessionId(data.joinedSessionId);
+                    
+                    // Update URL to /qr?s=joinedSessionId (Masa querysini kaldırıyoruz)
+                    const currentUrl = new URL(window.location.href);
+                    if (currentUrl.searchParams.has('masa') || currentUrl.searchParams.get('s') !== data.joinedSessionId) {
+                        currentUrl.searchParams.delete('masa');
+                        currentUrl.searchParams.set('s', data.joinedSessionId);
+                        window.history.replaceState({}, '', currentUrl.toString());
+                    }
+                } else {
+                    // Masaya sonradan giren kişi
+                    setIsReadOnly(true);
                 }
-                
-                // Gelen veride farklı bir masa numarası varsa (örn. masa taşındıysa) onu kullan
+
                 if (data.tableId) {
                     setTableId(data.tableId);
-                }
-                
-                // Update URL to /qr?s=joinedSessionId (Masa querysini kaldırıyoruz)
-                const currentUrl = new URL(window.location.href);
-                if (currentUrl.searchParams.has('masa') || currentUrl.searchParams.get('s') !== data.joinedSessionId) {
-                    currentUrl.searchParams.delete('masa');
-                    currentUrl.searchParams.set('s', data.joinedSessionId);
-                    window.history.replaceState({}, '', currentUrl.toString());
                 }
 
                 if (data.orders) {
@@ -199,135 +157,8 @@ export default function QRMenu() {
         setOrdering(false);
     };
 
-    const handlePinSubmit = () => {
-        const searchParams = new URLSearchParams(window.location.search);
-        checkTableSession(tableId || searchParams.get('masa'), null, searchParams.get('s'), false, pinInput);
-    };
-
-    const handlePinKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            handlePinSubmit();
-        }
-    };
-
     const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
-
-    if (locationStatus === 'checking') {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-brand-light text-center p-6">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-brand-red mb-6"></div>
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Güvenlik Kontrolü</h2>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-sm mt-4 w-full">
-                    <p className="text-gray-700 font-medium mb-3">Bu masaya <span className="font-bold text-brand-red">sonradan dahil olduğunuz için</span> sahte siparişleri engellemek amacıyla konum onayı gerekmektedir.</p>
-                    <p className="text-gray-500 text-sm mb-3">Not: Masadaki QR kodu okutan <span className="font-bold">İLK</span> kişi, hiçbir konum izni olmadan menüye direkt erişebilir.</p>
-                    <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 p-2 rounded-lg font-bold mb-4">
-                        <i className="fa-solid fa-shield-halved"></i>
-                        <span>Konum verileriniz asla kaydedilmez ve güvendedir.</span>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-100">
-                        <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
-                        <div className="flex flex-col gap-3">
-                            <input 
-                                type="text" 
-                                placeholder="6 Haneli Kod" 
-                                value={pinInput}
-                                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
-                                onKeyDown={handlePinKeyDown}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
-                                maxLength={6}
-                            />
-                            <button 
-                                onClick={handlePinSubmit}
-                                className="w-full bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
-                            >
-                                Katıl
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (locationStatus === 'denied') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-brand-light p-6 text-center">
-                <div className="bg-white p-8 rounded-3xl shadow-xl border-t-4 border-brand-red max-w-sm w-full">
-                    <div className="w-16 h-16 bg-red-100 text-brand-red rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                        <i className="fa-solid fa-location-crosshairs"></i>
-                    </div>
-                    <h2 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">Konum İzni Gerekli</h2>
-                    <p className="text-gray-600 font-medium mb-4">Açık bir masaya dahil olabilmeniz için restoranda olduğunuzu doğrulamamız gerekiyor.</p>
-                    <p className="text-gray-500 text-sm mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        Masadaki QR kodu okutan <span className="font-bold text-gray-800">İLK</span> kişi olursanız konum izni olmadan sipariş verebilirsiniz. Lütfen tarayıcı ayarlarınızdan izin verin veya masayı ilk açan kişi olmayı deneyin.
-                    </p>
-                    <div className="flex items-center justify-center gap-2 text-xs text-green-600 font-bold mb-6">
-                        <i className="fa-solid fa-shield-halved"></i>
-                        <span>Konumunuz kaydedilmez.</span>
-                    </div>
-
-                    <div className="pt-6 border-t border-gray-100">
-                        <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
-                        <div className="flex flex-col gap-3">
-                            <input 
-                                type="text" 
-                                placeholder="6 Haneli Kod" 
-                                value={pinInput}
-                                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
-                                onKeyDown={handlePinKeyDown}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
-                                maxLength={6}
-                            />
-                            <button 
-                                onClick={handlePinSubmit}
-                                className="w-full bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
-                            >
-                                Katıl
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (locationStatus === 'too_far') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-brand-light p-6 text-center">
-                <div className="bg-white p-8 rounded-3xl shadow-xl border-t-4 border-brand-red max-w-sm w-full">
-                    <div className="w-16 h-16 bg-red-100 text-brand-red rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                        <i className="fa-solid fa-map-location-dot"></i>
-                    </div>
-                    <h2 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">Restorandan Uzaksınız</h2>
-                    <p className="text-gray-600 font-medium">Sisteme giriş yapabilmek için restorana 500 metreden daha yakın olmalısınız.</p>
-                    <div className="mt-4 bg-gray-50 text-gray-500 text-sm font-bold py-2 px-4 rounded-xl mb-6">Mevcut Mesafe: {distanceStr}</div>
-                    
-                    <div className="pt-6 border-t border-gray-100">
-                        <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
-                        <div className="flex flex-col gap-3">
-                            <input 
-                                type="text" 
-                                placeholder="6 Haneli Kod" 
-                                value={pinInput}
-                                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
-                                onKeyDown={handlePinKeyDown}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
-                                maxLength={6}
-                            />
-                            <button 
-                                onClick={handlePinSubmit}
-                                className="w-full bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
-                            >
-                                Katıl
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     if (errorMsg) {
         return (
@@ -362,13 +193,8 @@ export default function QRMenu() {
                         </a>
                     </div>
                     <div className="flex items-center gap-2">
-                        {tableJoinCode && (
-                            <div className="text-sm font-black bg-brand-red text-white px-4 py-2 rounded-full shadow-md animate-pulse" title="Arkadaşlarınız konum olmadan bu kodla katılabilir">
-                                PIN: {tableJoinCode}
-                            </div>
-                        )}
                         <div className="text-sm font-bold bg-gray-100 text-gray-800 px-4 py-2 rounded-full">
-                            {tableId ? `Masa ${tableId}` : 'Sadece İnceleme'}
+                            {isReadOnly ? (tableId ? `Masa ${tableId} (Sadece İnceleme)` : 'Sadece İnceleme') : (tableId ? `Masa ${tableId}` : 'Sadece İnceleme')}
                         </div>
                     </div>
                 </div>
@@ -463,7 +289,7 @@ export default function QRMenu() {
                                         {item.price && (
                                             <div className="flex flex-col items-end gap-2">
                                                 <div className="font-black text-brand-red text-lg whitespace-nowrap">{item.price} TL</div>
-                                                {tableId && (() => {
+                                                {tableId && !isReadOnly && (() => {
                                                     const cartItem = cart.find(c => c.name === item.name);
                                                     if (cartItem) {
                                                         return (
@@ -504,7 +330,7 @@ export default function QRMenu() {
             </main>
 
             {/* Floating Cart Button */}
-            {cartCount > 0 && !cartOpen && (
+            {cartCount > 0 && !cartOpen && !isReadOnly && (
                 <div className="fixed bottom-6 left-0 right-0 px-4 z-40 flex justify-center animate-bounce-short">
                     <button 
                         onClick={() => setCartOpen(true)}
