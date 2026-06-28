@@ -188,7 +188,14 @@ export default function Panel() {
             if (localStorage.getItem('volume') !== null) {
                 setVolume(parseFloat(localStorage.getItem('volume')!));
             }
+            
+            // Pusher Edge Runtime'da tetiklenmezse diye 3 saniyede bir manuel kontrol edelim (Polling)
+            const fallbackInterval = setInterval(() => {
+                fetchAdminData();
+            }, 3000);
+
             return () => {
+                clearInterval(fallbackInterval);
                 pusher.unsubscribe('admin-channel');
             };
         }
