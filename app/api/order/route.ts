@@ -30,18 +30,21 @@ export async function POST(request: Request) {
 
         await redis.set('aspava:tables', db);
 
-        // Trigger real-time push to admin panel via Local Webhook
+        // Trigger real-time push to admin panel
         try {
-            await fetch('http://127.0.0.1:3001/webhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    event: 'new-order',
-                    data: { orderId: newOrder.id }
-                })
+            const Pusher = require('pusher');
+            const pusher = new Pusher({
+                appId: "2171329",
+                key: "02d39ab666eca7e30f1c",
+                secret: "f101cb1063445ab39be8",
+                cluster: "eu",
+                useTLS: true
+            });
+            await pusher.trigger("admin-channel", "new-order", {
+                orderId: newOrder.id
             });
         } catch (err) {
-            console.error("Webhook error:", err);
+            console.error("Pusher error:", err);
         }
 
         return NextResponse.json({ success: true, orderId: newOrder.id });

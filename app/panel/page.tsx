@@ -9,6 +9,7 @@ export default function Panel() {
     const [loginError, setLoginError] = useState('');
     const [darkMode, setDarkMode] = useState(false);
     const [volume, setVolume] = useState(1);
+    const [audioEnabled, setAudioEnabled] = useState(false);
 
     const [activeTab, setActiveTab] = useState<'menu' | 'orders'>('orders');
     
@@ -24,6 +25,7 @@ export default function Panel() {
     const prevOrdersRef = useRef<Set<string>>(new Set());
 
     const unlockAudio = () => {
+        setAudioEnabled(true);
         if (audioUnlockedRef.current) return;
         const el = document.getElementById('notificationSound') as HTMLAudioElement;
         if (el) {
@@ -129,11 +131,14 @@ export default function Panel() {
             fetchMenu();
             fetchAdminData();
             
-            // Local WebSocket (Socket.io) Entegrasyonu
-            const socket = io('http://127.0.0.1:3001');
+            // Pusher WebSocket Entegrasyonu
+            const Pusher = require('pusher-js');
+            const pusher = new Pusher('02d39ab666eca7e30f1c', {
+                cluster: 'eu'
+            });
 
-            socket.on('new-order', function(data: any) {
-                console.log("Yeni sipariş bildirimi alındı:", data);
+            const channel = pusher.subscribe('admin-channel');
+            channel.bind('new-order', function(data: any) {
                 // Verileri yenile (Ses zaten useEffect tarafından otomatik çalınacak)
                 fetchAdminData();
             });
@@ -155,7 +160,7 @@ export default function Panel() {
                 setVolume(parseFloat(localStorage.getItem('volume')!));
             }
             return () => {
-                socket.disconnect();
+                pusher.unsubscribe('admin-channel');
                 worker.postMessage('stop');
                 worker.terminate();
             };
@@ -294,27 +299,31 @@ export default function Panel() {
                                 Menü Fiyatları
                             </button>
                         </div>
-                        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-2 panel-tabs h-10 shadow-inner" title="Sipariş Bildirim Sesi">
-                            <i className={`fa-solid ${volume === 0 ? 'fa-volume-xmark' : 'fa-volume-high'} text-gray-500 w-4 text-center`}></i>
-                            <input 
-                                type="range" 
-                                min="0" max="1" step="0.1" 
-                                value={volume} 
-                                onChange={(e) => {
-                                    const v = parseFloat(e.target.value);
-                                    setVolume(v);
-                                    localStorage.setItem('volume', v.toString());
-                                    if (v > 0) {
-                                        const el = document.getElementById('notificationSound') as HTMLAudioElement;
-                                        if (el) {
-                                            el.volume = v;
-                                            el.currentTime = 0;
-                                            el.play().catch(()=>{});
+                        <div onClick={unlockAudio} className={`flex items-center gap-2 rounded-lg p-2 panel-tabs h-10 shadow-inner cursor-pointer transition-colors ${!audioEnabled ? 'bg-red-100 animate-pulse border border-red-200' : 'bg-gray-100'}`} title="Sipariş Bildirim Sesi">
+                            <i className={`fa-solid ${!audioEnabled || volume === 0 ? 'fa-volume-xmark text-brand-red' : 'fa-volume-high text-gray-500'} w-4 text-center`}></i>
+                            {audioEnabled ? (
+                                <input 
+                                    type="range" 
+                                    min="0" max="1" step="0.1" 
+                                    value={volume} 
+                                    onChange={(e) => {
+                                        const v = parseFloat(e.target.value);
+                                        setVolume(v);
+                                        localStorage.setItem('volume', v.toString());
+                                        if (v > 0) {
+                                            const el = document.getElementById('notificationSound') as HTMLAudioElement;
+                                            if (el) {
+                                                el.volume = v;
+                                                el.currentTime = 0;
+                                                el.play().catch(()=>{});
+                                            }
                                         }
-                                    }
-                                }}
-                                className="w-20 sm:w-24 accent-brand-red cursor-pointer"
-                            />
+                                    }}
+                                    className="w-20 sm:w-24 accent-brand-red cursor-pointer"
+                                />
+                            ) : (
+                                <span className="text-xs font-bold text-brand-red px-2 select-none">Ses Kapalı (Açmak için tıkla)</span>
+                            )}
                         </div>
                         <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 text-white hover:bg-gray-700 transition-colors dark-toggle shadow-sm">
                             <i className={`fa-solid ${darkMode ? 'fa-sun text-yellow-400' : 'fa-moon'}`}></i>
