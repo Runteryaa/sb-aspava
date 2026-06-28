@@ -199,6 +199,17 @@ export default function QRMenu() {
         setOrdering(false);
     };
 
+    const handlePinSubmit = () => {
+        const searchParams = new URLSearchParams(window.location.search);
+        checkTableSession(tableId || searchParams.get('masa'), null, searchParams.get('s'), false, pinInput);
+    };
+
+    const handlePinKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handlePinSubmit();
+        }
+    };
+
     const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
 
@@ -207,12 +218,33 @@ export default function QRMenu() {
             <div className="min-h-screen flex flex-col items-center justify-center bg-brand-light text-center p-6">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-brand-red mb-6"></div>
                 <h2 className="text-2xl font-black text-gray-900 tracking-tight">Güvenlik Kontrolü</h2>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-sm mt-4">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-sm mt-4 w-full">
                     <p className="text-gray-700 font-medium mb-3">Bu masaya <span className="font-bold text-brand-red">sonradan dahil olduğunuz için</span> sahte siparişleri engellemek amacıyla konum onayı gerekmektedir.</p>
                     <p className="text-gray-500 text-sm mb-3">Not: Masadaki QR kodu okutan <span className="font-bold">İLK</span> kişi, hiçbir konum izni olmadan menüye direkt erişebilir.</p>
-                    <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 p-2 rounded-lg font-bold">
+                    <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 p-2 rounded-lg font-bold mb-4">
                         <i className="fa-solid fa-shield-halved"></i>
                         <span>Konum verileriniz asla kaydedilmez ve güvendedir.</span>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100">
+                        <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
+                        <div className="flex flex-col gap-3">
+                            <input 
+                                type="text" 
+                                placeholder="6 Haneli Kod" 
+                                value={pinInput}
+                                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                                onKeyDown={handlePinKeyDown}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
+                                maxLength={6}
+                            />
+                            <button 
+                                onClick={handlePinSubmit}
+                                className="w-full bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
+                            >
+                                Katıl
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -238,21 +270,19 @@ export default function QRMenu() {
 
                     <div className="pt-6 border-t border-gray-100">
                         <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-3">
                             <input 
                                 type="text" 
                                 placeholder="6 Haneli Kod" 
                                 value={pinInput}
                                 onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
+                                onKeyDown={handlePinKeyDown}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
                                 maxLength={6}
                             />
                             <button 
-                                onClick={() => {
-                                    const searchParams = new URLSearchParams(window.location.search);
-                                    checkTableSession(tableId || searchParams.get('masa'), null, searchParams.get('s'), false, pinInput);
-                                }}
-                                className="bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
+                                onClick={handlePinSubmit}
+                                className="w-full bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
                             >
                                 Katıl
                             </button>
@@ -276,21 +306,19 @@ export default function QRMenu() {
                     
                     <div className="pt-6 border-t border-gray-100">
                         <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-3">
                             <input 
                                 type="text" 
                                 placeholder="6 Haneli Kod" 
                                 value={pinInput}
                                 onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
+                                onKeyDown={handlePinKeyDown}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
                                 maxLength={6}
                             />
                             <button 
-                                onClick={() => {
-                                    const searchParams = new URLSearchParams(window.location.search);
-                                    checkTableSession(tableId || searchParams.get('masa'), null, searchParams.get('s'), false, pinInput);
-                                }}
-                                className="bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
+                                onClick={handlePinSubmit}
+                                className="w-full bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
                             >
                                 Katıl
                             </button>
@@ -333,15 +361,15 @@ export default function QRMenu() {
                             </h1>
                         </a>
                     </div>
-                    <div className="flex flex-col items-end">
-                        <div className="text-sm font-bold bg-gray-100 text-gray-800 px-4 py-2 rounded-full mb-1">
-                            {tableId ? `Masa ${tableId}` : 'Sadece İnceleme'}
-                        </div>
+                    <div className="flex items-center gap-2">
                         {tableJoinCode && (
-                            <div className="text-xs font-black bg-brand-red text-white px-3 py-1 rounded-full shadow-sm animate-pulse" title="Arkadaşlarınız konum olmadan bu kodla katılabilir">
+                            <div className="text-sm font-black bg-brand-red text-white px-4 py-2 rounded-full shadow-md animate-pulse" title="Arkadaşlarınız konum olmadan bu kodla katılabilir">
                                 PIN: {tableJoinCode}
                             </div>
                         )}
+                        <div className="text-sm font-bold bg-gray-100 text-gray-800 px-4 py-2 rounded-full">
+                            {tableId ? `Masa ${tableId}` : 'Sadece İnceleme'}
+                        </div>
                     </div>
                 </div>
                 
