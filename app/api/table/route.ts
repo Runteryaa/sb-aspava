@@ -8,7 +8,7 @@ function generateUUID() {
 
 export async function POST(request: Request) {
     try {
-        const { tableId, sessionId, urlSessionId, locationVerified } = await request.json();
+        const { tableId, sessionId, urlSessionId, locationVerified, pinCode } = await request.json();
         let db: any = await redis.get('aspava:tables');
         
         if (!db || !db.tables) {
@@ -42,11 +42,16 @@ export async function POST(request: Request) {
                         orders: db.tables[foundTableId].orders 
                     });
                 }
-                
+                // Eğer PIN Kodu varsa
+                if (pinCode && db.tables[foundTableId].joinCode === pinCode) {
+                    if (dbChanged) await redis.set('aspava:tables', db);
+                    return NextResponse.json({ success: true, tableId: foundTableId, joinedSessionId: targetSession, orders: db.tables[foundTableId].orders, joinCode: db.tables[foundTableId].joinCode });
+                }
+
                 // Eğer cookie'si yoksa ama linkten geliyorsa (başkasının linkiyle girmeye çalışıyorsa)
                 if (locationVerified) {
                     if (dbChanged) await redis.set('aspava:tables', db);
-                    return NextResponse.json({ success: true, tableId: foundTableId, joinedSessionId: targetSession, orders: db.tables[foundTableId].orders });
+                    return NextResponse.json({ success: true, tableId: foundTableId, joinedSessionId: targetSession, orders: db.tables[foundTableId].orders, joinCode: db.tables[foundTableId].joinCode });
                 } else {
                     if (dbChanged) await redis.set('aspava:tables', db);
                     return NextResponse.json({ requireLocation: true });
@@ -65,28 +70,33 @@ export async function POST(request: Request) {
         // Eğer masa boşsa: İlk giren kişi, konum gerekmez
         if (!db.tables[tableId].sessionId) {
             const newSession = generateUUID();
+            const joinCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
             db.tables[tableId].sessionId = newSession;
+            db.tables[tableId].joinCode = joinCode;
             db.tables[tableId].orders = [];
             db.tables[tableId].lastActivity = Date.now();
             await redis.set('aspava:tables', db);
-            return NextResponse.json({ success: true, tableId, joinedSessionId: newSession, orders: [] });
+            return NextResponse.json({ success: true, tableId, joinedSessionId: newSession, orders: [], joinCode });
+        }
+
+        // Eğer PIN kodu ile giriliyorsa
+        if (pinCode && db.tables[tableId].joinCode === pinCode) {
+            if (dbChanged) await redis.set('aspava:tables', db);
+            return NextResponse.json({ success: true, tableId, joinedSessionId: db.tables[tableId].sessionId, orders: db.tables[tableId].orders, joinCode: db.tables[tableId].joinCode });
         }
 
         // Eğer masa doluysa ve gelen kişinin çerezi (cookie) eşleşiyorsa
-        // Konum gerekmez, zaten içeride
         if (db.tables[tableId].sessionId === sessionId) {
             if (dbChanged) await redis.set('aspava:tables', db);
-            return NextResponse.json({ success: true, tableId, joinedSessionId: db.tables[tableId].sessionId, orders: db.tables[tableId].orders });
+            return NextResponse.json({ success: true, tableId, joinedSessionId: db.tables[tableId].sessionId, orders: db.tables[tableId].orders, joinCode: db.tables[tableId].joinCode });
         }
 
         // Eğer masa doluysa ama gelen kişinin çerezi farklıysa/yoksa (Masaya sonradan dahil olan kişi veya link ile giren)
         if (locationVerified) {
-            // Konum doğrulandıysa girişine izin ver
             if (dbChanged) await redis.set('aspava:tables', db);
-            return NextResponse.json({ success: true, tableId, joinedSessionId: db.tables[tableId].sessionId, orders: db.tables[tableId].orders });
+            return NextResponse.json({ success: true, tableId, joinedSessionId: db.tables[tableId].sessionId, orders: db.tables[tableId].orders, joinCode: db.tables[tableId].joinCode });
         } else {
             if (dbChanged) await redis.set('aspava:tables', db);
-            // Konum doğrulanmadıysa, frontend'den konum iste
             return NextResponse.json({ requireLocation: true });
         }
 

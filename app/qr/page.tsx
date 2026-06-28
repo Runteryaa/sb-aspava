@@ -20,6 +20,8 @@ export default function QRMenu() {
     const [cartOpen, setCartOpen] = useState(false);
     const [ordering, setOrdering] = useState(false);
     const [myOrders, setMyOrders] = useState<any[]>([]);
+    const [tableJoinCode, setTableJoinCode] = useState<string | null>(null);
+    const [pinInput, setPinInput] = useState<string>('');
     
     const [locationStatus, setLocationStatus] = useState<'allowed' | 'checking' | 'denied' | 'too_far'>('allowed');
     const [distanceStr, setDistanceStr] = useState<string>('');
@@ -42,11 +44,11 @@ export default function QRMenu() {
     };
     
     // API'den durumu kontrol eden fonksiyon
-    const checkTableSession = (tId: string | null, sId: string | null, urlSession: string | null = null, locationVerified: boolean = false) => {
+    const checkTableSession = (tId: string | null, sId: string | null, urlSession: string | null = null, locationVerified: boolean = false, pinCode: string | null = null) => {
         fetch('/api/table', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tableId: tId, sessionId: sId, urlSessionId: urlSession, locationVerified })
+            body: JSON.stringify({ tableId: tId, sessionId: sId, urlSessionId: urlSession, locationVerified, pinCode })
         })
         .then(res => res.json())
         .then(data => {
@@ -80,6 +82,9 @@ export default function QRMenu() {
                 // Set cookie for 12 hours
                 document.cookie = `aspava_session=${data.joinedSessionId}; max-age=${12 * 60 * 60}; path=/`;
                 setSessionId(data.joinedSessionId);
+                if (data.joinCode) {
+                    setTableJoinCode(data.joinCode);
+                }
                 
                 // Gelen veride farklı bir masa numarası varsa (örn. masa taşındıysa) onu kullan
                 if (data.tableId) {
@@ -226,9 +231,32 @@ export default function QRMenu() {
                     <p className="text-gray-500 text-sm mb-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
                         Masadaki QR kodu okutan <span className="font-bold text-gray-800">İLK</span> kişi olursanız konum izni olmadan sipariş verebilirsiniz. Lütfen tarayıcı ayarlarınızdan izin verin veya masayı ilk açan kişi olmayı deneyin.
                     </p>
-                    <div className="flex items-center justify-center gap-2 text-xs text-green-600 font-bold">
+                    <div className="flex items-center justify-center gap-2 text-xs text-green-600 font-bold mb-6">
                         <i className="fa-solid fa-shield-halved"></i>
                         <span>Konumunuz kaydedilmez.</span>
+                    </div>
+
+                    <div className="pt-6 border-t border-gray-100">
+                        <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="6 Haneli Kod" 
+                                value={pinInput}
+                                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
+                                maxLength={6}
+                            />
+                            <button 
+                                onClick={() => {
+                                    const searchParams = new URLSearchParams(window.location.search);
+                                    checkTableSession(tableId || searchParams.get('masa'), null, searchParams.get('s'), false, pinInput);
+                                }}
+                                className="bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
+                            >
+                                Katıl
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -244,7 +272,30 @@ export default function QRMenu() {
                     </div>
                     <h2 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">Restorandan Uzaksınız</h2>
                     <p className="text-gray-600 font-medium">Sisteme giriş yapabilmek için restorana 500 metreden daha yakın olmalısınız.</p>
-                    <div className="mt-4 bg-gray-50 text-gray-500 text-sm font-bold py-2 px-4 rounded-xl">Mevcut Mesafe: {distanceStr}</div>
+                    <div className="mt-4 bg-gray-50 text-gray-500 text-sm font-bold py-2 px-4 rounded-xl mb-6">Mevcut Mesafe: {distanceStr}</div>
+                    
+                    <div className="pt-6 border-t border-gray-100">
+                        <p className="text-gray-700 font-bold mb-3 text-sm">Veya Masadaki PIN Kodunu Girin</p>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="6 Haneli Kod" 
+                                value={pinInput}
+                                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-xl font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-red placeholder-gray-300"
+                                maxLength={6}
+                            />
+                            <button 
+                                onClick={() => {
+                                    const searchParams = new URLSearchParams(window.location.search);
+                                    checkTableSession(tableId || searchParams.get('masa'), null, searchParams.get('s'), false, pinInput);
+                                }}
+                                className="bg-brand-red text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm"
+                            >
+                                Katıl
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -282,8 +333,15 @@ export default function QRMenu() {
                             </h1>
                         </a>
                     </div>
-                    <div className="text-sm font-bold bg-gray-100 text-gray-800 px-4 py-2 rounded-full">
-                        {tableId ? `Masa ${tableId}` : 'Sadece İnceleme'}
+                    <div className="flex flex-col items-end">
+                        <div className="text-sm font-bold bg-gray-100 text-gray-800 px-4 py-2 rounded-full mb-1">
+                            {tableId ? `Masa ${tableId}` : 'Sadece İnceleme'}
+                        </div>
+                        {tableJoinCode && (
+                            <div className="text-xs font-black bg-brand-red text-white px-3 py-1 rounded-full shadow-sm animate-pulse" title="Arkadaşlarınız konum olmadan bu kodla katılabilir">
+                                PIN: {tableJoinCode}
+                            </div>
+                        )}
                     </div>
                 </div>
                 
