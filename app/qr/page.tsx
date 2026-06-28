@@ -59,6 +59,13 @@ export default function QRMenu() {
                     setTableId(data.tableId);
                 }
 
+                if (data.tableMoved) {
+                    // Masamız taşınmış! URL'yi güncelleyelim ki yenileyince eski masaya gitmesin
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('masa', data.tableMoved);
+                    window.history.replaceState({}, '', currentUrl.toString());
+                }
+
                 if (data.orders) {
                     setMyOrders(data.orders);
                 }

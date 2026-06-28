@@ -59,6 +59,28 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Masa bulunamadı' }, { status: 404 });
         }
 
+        // Masa taşındıysa (eski masadan istek geliyorsa ama session başka masadaysa)
+        if (sessionId) {
+            let movedToTableId = null;
+            for (const tId in db.tables) {
+                if (tId !== tableId && db.tables[tId].sessionId === sessionId) {
+                    movedToTableId = tId;
+                    break;
+                }
+            }
+            if (movedToTableId) {
+                if (dbChanged) await redis.set('aspava:tables', db);
+                return NextResponse.json({ 
+                    success: true, 
+                    tableId: movedToTableId,
+                    tableMoved: movedToTableId,
+                    joinedSessionId: sessionId,
+                    orders: db.tables[movedToTableId].orders,
+                    isOwner: true
+                });
+            }
+        }
+
         // Eğer masa boşsa: İlk giren kişi masa sahibi olur
         if (!db.tables[tableId].sessionId) {
             const newSession = generateUUID();
