@@ -1,6 +1,6 @@
-export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { redis, cleanInactiveTables } from '@/lib/redis';
+import Pusher from 'pusher';
 
 function generateUUID() {
     return Math.random().toString(36).substr(2, 9) + Math.floor(Date.now() / 3).toString(36);
@@ -65,6 +65,19 @@ export async function POST(request: Request) {
             db.tables[tableId].orders = [];
             db.tables[tableId].lastActivity = Date.now();
             await redis.set('aspava:tables', db);
+            
+            // Masaya ilk giris yapildi, admini bilgilendir
+            try {
+                const pusher = new Pusher({
+                    appId: process.env.PUSHER_APP_ID || "2171468",
+                    key: process.env.NEXT_PUBLIC_PUSHER_KEY || "3e97c3f16351fdefca9e",
+                    secret: process.env.PUSHER_SECRET || "6a4c9dbea9006d6f755b",
+                    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu",
+                    useTLS: true
+                });
+                await pusher.trigger('admin-channel', 'refresh-admin', { action: 'table_opened', tableId });
+            } catch(e) { console.error('Pusher error:', e); }
+
             return NextResponse.json({ success: true, tableId, joinedSessionId: newSession, orders: [], isOwner: true });
         }
 

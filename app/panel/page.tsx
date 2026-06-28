@@ -10,7 +10,7 @@ export default function Panel() {
     const [volume, setVolume] = useState(1);
     const [audioEnabled, setAudioEnabled] = useState(false);
 
-    const [activeTab, setActiveTab] = useState<'menu' | 'orders'>('orders');
+    const [activeTab, setActiveTab] = useState<'menu' | 'orders' | 'settings'>('orders');
     
     // Menu States
     const [menuData, setMenuData] = useState<any>(null);
@@ -154,7 +154,7 @@ export default function Panel() {
             fetchAdminData();
             
             // Pusher WebSocket Entegrasyonu
-            const pusher = new Pusher('02d39ab666eca7e30f1c', {
+            const pusher = new Pusher('3e97c3f16351fdefca9e', {
                 cluster: 'eu'
             });
 
@@ -176,15 +176,11 @@ export default function Panel() {
                     });
             });
 
-            // Web Worker ile arka planda yavaşlamayan polling (Yedek)
-            const worker = new Worker('/worker.js');
-            worker.onmessage = (e) => {
-                if (e.data === 'tick') {
-                    fetchAdminData();
-                }
-            };
-            worker.postMessage('start');
-            
+            // 'refresh-admin' kanalini dinleyip listeyi guncelle
+            channel.bind('refresh-admin', function() {
+                fetchAdminData();
+            });
+
             // Check saved theme
             if (localStorage.getItem('theme') === 'dark') {
                 setDarkMode(true);
@@ -194,8 +190,6 @@ export default function Panel() {
             }
             return () => {
                 pusher.unsubscribe('admin-channel');
-                worker.postMessage('stop');
-                worker.terminate();
             };
         }
     }, [isAuthenticated]);

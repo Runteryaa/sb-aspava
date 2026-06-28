@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Pusher from 'pusher-js';
 
 const categoryConfig: Record<string, { id: string, color: string, icon: string }> = {
     kahvalti: { id: 'corbalar', color: 'bg-amber-400', icon: 'fa-mug-hot' },
@@ -98,19 +99,25 @@ export default function QRMenu() {
         // İlk yükleme (masa varsa masa id'si ile, yoksa null göndererek sadece session id ile kontrol et)
         checkTableSession(t || null, localSession, s);
         
-        // Polling (Her 15 saniyede bir sipariş durumunu güncelle - Sadece başarılı giriş yaptıysa)
-        const interval = setInterval(() => {
-            const currentSession = getCookie('aspava_session');
-            const currentS = new URLSearchParams(window.location.search).get('s');
+        // Pusher üzerinden WebSocket dinleme (Polling yerine)
+        const pusher = new Pusher('3e97c3f16351fdefca9e', {
+            cluster: 'eu'
+        });
+
+        const channel = pusher.subscribe('qr-channel');
+        channel.bind('update-table', function(data: any) {
+            const currentT = new URLSearchParams(window.location.search).get('masa');
+            const currentS = new URLSearchParams(window.location.search).get('s') || getCookie('aspava_session');
             
-            // Eğer session yoksa (henüz girmediyse veya konum onaylamadıysa) poll yapma
-            if (currentSession || currentS) {
-                // Polling sırasında masa ID göndermiyoruz ki backend sadece session ID'den masayı bulsun
-                checkTableSession(null, currentSession, currentS);
+            // Sadece bu masayla ilgili bir güncelleme ise tabloyu yenile
+            if (data.tableId === (currentT || t || null) || data.sessionId === (currentS || localSession || null)) {
+                checkTableSession(currentT || t || null, currentS || localSession || null, currentS || s || null);
             }
-        }, 15000);
-        
-        return () => clearInterval(interval);
+        });
+
+        return () => {
+            pusher.unsubscribe('qr-channel');
+        };
     }, []);
 
     const addToCart = (item: any) => {

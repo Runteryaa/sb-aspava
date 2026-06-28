@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
 import Pusher from 'pusher';
@@ -39,10 +38,10 @@ export async function POST(request: Request) {
         // Trigger real-time push to admin panel
         try {
             const pusher = new Pusher({
-                appId: "2171329",
-                key: "02d39ab666eca7e30f1c",
-                secret: "f101cb1063445ab39be8",
-                cluster: "eu",
+                appId: process.env.PUSHER_APP_ID || "2171468",
+                key: process.env.NEXT_PUBLIC_PUSHER_KEY || "3e97c3f16351fdefca9e",
+                secret: process.env.PUSHER_SECRET || "6a4c9dbea9006d6f755b",
+                cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu",
                 useTLS: true
             });
             await pusher.trigger("admin-channel", "new-order", {
@@ -50,9 +49,7 @@ export async function POST(request: Request) {
                 tableId: newOrder.tableId,
                 items: newOrder.items
             });
-        } catch (err) {
-            console.error("Pusher error:", err);
-        }
+        } catch(e) { console.error('Pusher error:', e); }
 
         return NextResponse.json({ success: true, orderId: newOrder.id });
 
