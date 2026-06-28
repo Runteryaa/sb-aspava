@@ -19,6 +19,7 @@ export default function Panel() {
     const [message, setMessage] = useState('');
     const [addingToTable, setAddingToTable] = useState<string | null>(null);
     const [adminCart, setAdminCart] = useState<{name: string, price: number, qty: number}[]>([]);
+    const [adminSearchQuery, setAdminSearchQuery] = useState('');
 
     const [adminData, setAdminData] = useState<any>(null);
     const audioUnlockedRef = useRef(false);
@@ -521,16 +522,35 @@ export default function Panel() {
                     <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-fade-in">
                         <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-2xl">
                             <h2 className="text-xl font-black text-gray-800">Masa {addingToTable} - Ürün Ekle</h2>
-                            <button onClick={() => { setAddingToTable(null); setAdminCart([]); }} className="text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full transition-colors">
+                            <button onClick={() => { setAddingToTable(null); setAdminCart([]); setAdminSearchQuery(''); }} className="text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full transition-colors">
                                 <i className="fa-solid fa-xmark"></i>
                             </button>
                         </div>
+                        <div className="px-5 py-3 border-b border-gray-100 bg-white">
+                            <div className="relative">
+                                <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ürün ara..." 
+                                    value={adminSearchQuery}
+                                    onChange={(e) => setAdminSearchQuery(e.target.value)}
+                                    className="w-full bg-gray-100 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-brand-red text-gray-800 font-medium outline-none transition-all"
+                                />
+                            </div>
+                        </div>
                         <div className="flex-1 overflow-y-auto p-5 space-y-6">
-                            {Object.keys(menuData).map((catKey) => (
+                            {Object.keys(menuData).map((catKey) => {
+                                const category = menuData[catKey];
+                                const filteredItems = category.items.filter((item: any) => 
+                                    item.name.toLowerCase().includes(adminSearchQuery.toLowerCase())
+                                );
+                                if (filteredItems.length === 0) return null;
+
+                                return (
                                 <div key={catKey}>
-                                    <h3 className="font-bold text-gray-700 text-lg mb-3 border-b pb-1">{menuData[catKey].title}</h3>
+                                    <h3 className="font-bold text-gray-700 text-lg mb-3 border-b pb-1">{category.title}</h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {menuData[catKey].items.map((item: any, idx: number) => {
+                                        {filteredItems.map((item: any, idx: number) => {
                                             const cartItem = adminCart.find(c => c.name === item.name);
                                             return (
                                                 <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-200 p-3 rounded-lg shadow-sm">
@@ -566,7 +586,8 @@ export default function Panel() {
                                         })}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                         <div className="p-5 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
                             <div className="flex justify-between items-center mb-4">
@@ -579,6 +600,7 @@ export default function Panel() {
                                         handleAction('add_to_table', { tableId: addingToTable, items: adminCart });
                                         setAddingToTable(null);
                                         setAdminCart([]);
+                                        setAdminSearchQuery('');
                                     }
                                 }}
                                 disabled={adminCart.length === 0}
