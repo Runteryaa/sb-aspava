@@ -56,21 +56,21 @@
             tatlilar: {
                 title: "Tatlılar",
                 items: [
-                    { name: "Künefe", desc: "Kadayıf, Özel peynir, Şerbet, Fıstık" }
+                    { name: "Künefe", desc: "" }
                 ]
             },
             icecekler: {
                 title: "İçecekler",
                 items: [
-                    { name: "Coca Cola / Coca Cola Zero", desc: "Su, Şeker, Aroma, Karbondioksit" },
-                    { name: "Fanta", desc: "Su, Şeker, Aroma, Karbondioksit" },
+                    { name: "Coca Cola / Coca Cola Zero", desc: "" },
+                    { name: "Fanta", desc: "" },
                     { name: "Fuse Tea", desc: "Kutu İçecek" },
-                    { name: "Ayran (Büyük Boy)", desc: "Yoğurt, Su, Tuz" },
+                    { name: "Ayran (Büyük Boy)", desc: "" },
                     { name: "Sprite / Soda / Su / Şalgam", desc: "Soğuk İçecekler" },
-                    { name: "Çay", desc: "Mineral, Su, Çay yaprağı" },
-                    { name: "1 Lt. Ayran", desc: "Yoğurt, Su, Tuz" },
-                    { name: "1 Lt. Coca Cola / Zero / Fanta", desc: "Su, Şeker, Aroma, Karbondioksit" },
-                    { name: "2.5 Lt. Coca Cola / Fanta", desc: "Su, Şeker, Aroma, Karbondioksit" }
+                    { name: "Çay", desc: "" },
+                    { name: "1 Lt. Ayran", desc: "" },
+                    { name: "1 Lt. Coca Cola / Zero / Fanta", desc: "" },
+                    { name: "2.5 Lt. Coca Cola / Fanta", desc: "" }
                 ]
             }
         };
@@ -143,7 +143,7 @@
             { initial: "M", color: "bg-rose-100 text-rose-600", name: "Mehmet Akif B.", source: "Google Haritalar", text: "Odun ateşini lezzetle noktalayan ustalarımıza çok teşekkür ederim. Tavsiye ederim. Sağ olsunlar." },
             { initial: "A", color: "bg-amber-100 text-amber-600", name: "Arda K.", source: "Google Haritalar", text: "Aspavaların en iyisi, en mütevazisi ve en lezzetlisi. Mutlaka öneririm." },
             { initial: "E", color: "bg-emerald-100 text-emerald-600", name: "Enes Saraçoğlu", source: "Google Haritalar", text: "Türkkonut'un tek yemek adresi, gerçekten çok lezzetli." },
-            { initial: "E", color: "bg-emerald-100 text-emerald-600", name: "Ekrem Alıcı", source: "Google Haritalar", text: "SB Aspavanın tek adresi." },
+            { initial: "E", color: "bg-emerald-100 text-emerald-600", name: "Ekrem Alıcı", source: "Google Haritalar", text: ":)" },
             { initial: "D", color: "bg-blue-100 text-blue-600", name: "Dilşad Y.", source: "Google Haritalar", text: "Kuşbaşı kaşarlı pidesi ve adanası mükemmel. Hızlı paket servisi var. Temiz bir işletme. Paket servis için tercih edilebilir." },
             { initial: "E", color: "bg-indigo-100 text-indigo-600", name: "Emre Y.", source: "Google Haritalar", text: "Genelde paket servis tercih ediyorum. Kısa sürede geliyor. Lahmacun tavsiye ederim." },
             { initial: "Ö", color: "bg-yellow-100 text-yellow-600", name: "Ömer O.", source: "Google Haritalar", text: "Temiz lezzetli. Mütevazı bir mekân. Çalışanlar kibar ve güleryüzlü." },
@@ -157,10 +157,10 @@
         ];
 
         function renderRandomReviews() {
-            // Belirtilen kişilerin yorumlarının daha nadir çıkması için filtreleme (%15 şans)
+            // Belirtilen kişilerin yorumlarının daha nadir çıkması için filtreleme (%10 şans)
             const filteredReviews = realReviews.filter(r => {
                 if (r.name === "Ekrem Alıcı" || r.name === "Enes Saraçoğlu") {
-                    return Math.random() < 0.15;
+                    return Math.random() < 0.10;
                 }
                 return true;
             });
