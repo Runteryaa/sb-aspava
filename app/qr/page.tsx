@@ -21,6 +21,7 @@ export default function QRMenu() {
     const [ordering, setOrdering] = useState(false);
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [isReadOnly, setIsReadOnly] = useState<boolean>(true);
+    const [hasCheckedSession, setHasCheckedSession] = useState<boolean>(false);
     
     // API'den durumu kontrol eden fonksiyon
     const checkTableSession = (tId: string | null, sId: string | null, urlSession: string | null = null) => {
@@ -60,6 +61,7 @@ export default function QRMenu() {
                 if (data.orders) {
                     setMyOrders(data.orders);
                 }
+                setHasCheckedSession(true);
             }
         })
         .catch(() => setErrorMsg("Sunucuya bağlanılamadı."));
@@ -172,7 +174,7 @@ export default function QRMenu() {
         );
     }
 
-    if (!menuData || (tableId && !sessionId)) {
+    if (!menuData || (tableId && !hasCheckedSession)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-brand-light">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
