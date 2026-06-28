@@ -76,7 +76,7 @@ export async function POST(request: Request) {
                     cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu",
                     useTLS: true,
                     useFetch: true
-                });
+                } as any);
                 await pusher.trigger('admin-channel', 'refresh-admin', { action: 'table_opened', tableId });
             } catch(e) { console.error('Pusher error:', e); }
 

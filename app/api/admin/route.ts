@@ -120,7 +120,7 @@ export async function POST(request: Request) {
                     cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu",
                     useTLS: true,
                     useFetch: true
-                });
+                } as any);
                 await pusher.trigger('qr-channel', 'update-table', {
                     tableId: tableId || fromTableId || toTableId,
                     action: action
