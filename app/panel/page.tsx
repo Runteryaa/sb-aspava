@@ -17,6 +17,8 @@ export default function Panel() {
     const [menuLoading, setMenuLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
+    const [addingToTable, setAddingToTable] = useState<string | null>(null);
+    const [adminCart, setAdminCart] = useState<{name: string, price: number, qty: number}[]>([]);
 
     const [adminData, setAdminData] = useState<any>(null);
     const audioUnlockedRef = useRef(false);
@@ -477,7 +479,13 @@ export default function Panel() {
                                                         ))}
                                                         {table.orders.length === 0 && <span className="text-sm text-gray-400">Henüz sipariş yok. Menüye bakıyorlar...</span>}
                                                     </div>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        <button 
+                                                            onClick={() => setAddingToTable(tableId)}
+                                                            className="bg-brand-red text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors shadow-sm flex items-center gap-2"
+                                                        >
+                                                            <i className="fa-solid fa-plus"></i> Ürün Ekle
+                                                        </button>
                                                         <button 
                                                             onClick={() => {
                                                                 const target = prompt(`Masa ${tableId} hangi masaya taşınsın? (1-10 arası bir masa numarası giriniz)`);
@@ -506,6 +514,82 @@ export default function Panel() {
                     </div>
                 )}
             </div>
+            
+            {/* Add to Table Modal */}
+            {addingToTable && menuData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-fade-in">
+                        <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+                            <h2 className="text-xl font-black text-gray-800">Masa {addingToTable} - Ürün Ekle</h2>
+                            <button onClick={() => { setAddingToTable(null); setAdminCart([]); }} className="text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full transition-colors">
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                            {Object.keys(menuData).map((catKey) => (
+                                <div key={catKey}>
+                                    <h3 className="font-bold text-gray-700 text-lg mb-3 border-b pb-1">{menuData[catKey].title}</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {menuData[catKey].items.map((item: any, idx: number) => {
+                                            const cartItem = adminCart.find(c => c.name === item.name);
+                                            return (
+                                                <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-200 p-3 rounded-lg shadow-sm">
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-gray-800 text-sm">{item.name}</div>
+                                                        <div className="text-brand-red font-black text-xs">{item.price} TL</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 bg-white rounded shadow-sm p-1">
+                                                        <button 
+                                                            onClick={() => {
+                                                                if(cartItem && cartItem.qty > 1) {
+                                                                    setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c));
+                                                                } else {
+                                                                    setAdminCart(adminCart.filter(c => c.name !== item.name));
+                                                                }
+                                                            }}
+                                                            className="w-7 h-7 flex items-center justify-center bg-gray-100 text-brand-red rounded active:scale-95"
+                                                        ><i className="fa-solid fa-minus text-xs"></i></button>
+                                                        <span className="w-5 text-center font-bold text-gray-800 text-sm">{cartItem ? cartItem.qty : 0}</span>
+                                                        <button 
+                                                            onClick={() => {
+                                                                if(cartItem) {
+                                                                    setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c));
+                                                                } else {
+                                                                    setAdminCart([...adminCart, { name: item.name, price: parseFloat(item.price || '0'), qty: 1 }]);
+                                                                }
+                                                            }}
+                                                            className="w-7 h-7 flex items-center justify-center bg-brand-red text-white rounded active:scale-95"
+                                                        ><i className="fa-solid fa-plus text-xs"></i></button>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="p-5 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="font-bold text-gray-600">Toplam Tutarı:</span>
+                                <span className="text-2xl font-black text-brand-red">{adminCart.reduce((s, c) => s + (c.price * c.qty), 0)} TL</span>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    if(adminCart.length > 0) {
+                                        handleAction('add_to_table', { tableId: addingToTable, items: adminCart });
+                                        setAddingToTable(null);
+                                        setAdminCart([]);
+                                    }
+                                }}
+                                disabled={adminCart.length === 0}
+                                className="w-full bg-brand-red text-white font-bold py-3 rounded-xl shadow-md hover:bg-brand-dark transition-colors disabled:opacity-50"
+                            >
+                                Masaya Ekle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             <audio id="notificationSound" src="/notification.mp3" preload="auto"></audio>
             

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     if (!auth || auth.value !== 'true') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     try {
-        const { action, tableId, orderId, status, fromTableId, toTableId } = await request.json();
+        const { action, tableId, orderId, status, fromTableId, toTableId, items } = await request.json();
         let db: any = await redis.get('aspava:tables');
         if (!db) return NextResponse.json({ error: 'DB error' }, { status: 500 });
         if (!db.pendingOrders) db.pendingOrders = [];
@@ -86,6 +86,18 @@ export async function POST(request: Request) {
             if (db.tables[tableId]) {
                 const to = db.tables[tableId].orders.find((o: any) => o.id === orderId);
                 if (to) to.status = status;
+            }
+        } else if (action === 'add_to_table' && tableId && items) {
+            if (db.tables[tableId]) {
+                const newOrder = {
+                    id: Date.now().toString(),
+                    tableId,
+                    items,
+                    status: 'hazir', // Direct addition by admin implies it's already approved/ready
+                    timestamp: new Date().toISOString()
+                };
+                db.tables[tableId].orders.push(newOrder);
+                db.tables[tableId].lastActivity = Date.now();
             }
         }
 
