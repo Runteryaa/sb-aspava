@@ -152,9 +152,7 @@
             { initial: "N", color: "bg-green-100 text-green-600", name: "Nail B.", source: "Google Haritalar", text: "Antep lahmacun ve kuşbaşılı kaşarlı pidesi denemeye değer." },
             { initial: "K", color: "bg-purple-100 text-purple-600", name: "Kaan S.", source: "Google Haritalar", text: "Servis hızlı, ikramlar güzel, yemekler leziz." },
             { initial: "B", color: "bg-pink-100 text-pink-600", name: "Bedi D.", source: "Google Haritalar", text: "Temiz ve lezzetli... Kesinlikle tavsiye ederim." },
-            { initial: "T", color: "bg-teal-100 text-teal-600", name: "Tolga S.", source: "Google Haritalar", text: "Türkkonut'un aspavası. İkram konusunda çok cömertler." },
             { initial: "O", color: "bg-cyan-100 text-cyan-600", name: "Ozan A.", source: "Google Haritalar", text: "Kaliteli, temiz ve hızlı." },
-            { initial: "A", color: "bg-red-100 text-red-600", name: "Arda B.", source: "Google Haritalar", text: "İkramlar, lezzet, sunum mükemmel." },
             { initial: "K", color: "bg-emerald-100 text-emerald-600", name: "Karavan T.", source: "Google Haritalar", text: "Türkkonut'ta aç olunca yemek yenebilecek tam bir aile işletmesi. Güzel, temiz ve her şey olan bir yer, tavsiye ederim." },
             { initial: "H", color: "bg-rose-100 text-rose-600", name: "HiraNur S.", source: "Google Haritalar", text: "Çok güzel bir mekan gitmenizi tavsiye ediyorum, pide ve lahmacunları çok güzel ellerine sağlık." }
         ];
