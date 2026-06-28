@@ -245,6 +245,18 @@ export default function Panel() {
         fetchAdminData();
     };
 
+    const printToLocalServer = async (tableId: string, items: any, orderId: string) => {
+        try {
+            await fetch('http://localhost:8181/print', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tableId, items, orderId })
+            });
+        } catch (e) {
+            console.error("Lokal yazdırma sunucusuna ulaşılamadı. Sunucunun açık olduğundan emin olun.");
+        }
+    };
+
     if (isAuthenticated === null) return <div className="p-10 text-center text-xl">Kontrol ediliyor...</div>;
 
     if (isAuthenticated === false) {
@@ -599,6 +611,7 @@ export default function Panel() {
                                 onClick={() => {
                                     if(adminCart.length > 0) {
                                         handleAction('add_to_table', { tableId: addingToTable, items: adminCart });
+                                        printToLocalServer(addingToTable, adminCart, 'MANUEL');
                                         setAddingToTable(null);
                                         setAdminCart([]);
                                         setAdminSearchQuery('');
