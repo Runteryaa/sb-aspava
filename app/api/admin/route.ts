@@ -2,7 +2,7 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { redis, cleanInactiveTables } from '@/lib/redis';
-import Pusher from 'pusher';
+import { triggerPusherEdge } from '@/lib/pusherEdge';
 
 export async function GET() {
     const cookieStore = await cookies();
@@ -112,25 +112,15 @@ export async function POST(request: Request) {
 
         // Notify clients about table updates via Pusher
         if (action !== 'update_settings') {
-            try {
-                const pusher = new Pusher({
-                    appId: process.env.PUSHER_APP_ID || "2171468",
-                    key: process.env.NEXT_PUBLIC_PUSHER_KEY || "3e97c3f16351fdefca9e",
-                    secret: process.env.PUSHER_SECRET || "6a4c9dbea9006d6f755b",
-                    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "eu",
-                    useTLS: true,
-                    useFetch: true
-                } as any);
-                await pusher.trigger('qr-channel', 'update-table', {
-                    tableId: tableId || fromTableId || toTableId,
-                    action: action
-                });
-                
-                // Also notify admin panel to refresh if needed
-                await pusher.trigger('admin-channel', 'refresh-admin', {
-                    action: action
-                });
-            } catch(e) { console.error('Pusher error:', e); }
+            await triggerPusherEdge('qr-channel', 'update-table', {
+                tableId: tableId || fromTableId || toTableId,
+                action: action
+            });
+            
+            // Also notify admin panel to refresh if needed
+            await triggerPusherEdge('admin-channel', 'refresh-admin', {
+                action: action
+            });
         }
 
         return NextResponse.json({ success: true });
