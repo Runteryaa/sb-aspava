@@ -44,12 +44,21 @@ export default function Panel() {
         // Herhangi bir tıklamada sesi unlock et
         document.addEventListener('click', unlockAudio, { once: true });
         
-        if (adminData && adminData.pendingOrders) {
-            const currentPending = adminData.pendingOrders.filter((o:any) => o.status === 'bekliyor');
+        if (adminData && adminData.tables) {
+            let allOrders: any[] = [];
+            if (adminData.pendingOrders) {
+                allOrders = [...adminData.pendingOrders];
+            }
+            for (const tId in adminData.tables) {
+                const tableOrders = adminData.tables[tId].orders || [];
+                allOrders = [...allOrders, ...tableOrders];
+            }
             
             if (!initialLoadRef.current) {
-                const hasNewOrder = currentPending.some((o:any) => !prevOrdersRef.current.has(o.id));
-                if (hasNewOrder) {
+                const newOrders = allOrders.filter(o => !prevOrdersRef.current.has(o.id));
+                
+                if (newOrders.length > 0) {
+                    // Sesi çal
                     const vol = parseFloat(localStorage.getItem('volume') || '1');
                     if (vol > 0) {
                         const el = document.getElementById('notificationSound') as HTMLAudioElement;
@@ -62,12 +71,23 @@ export default function Panel() {
                             }
                         }
                     }
+
+                    // Otomatik onay açıksa yazdır
+                    if (adminData.settings?.autoApprove) {
+                        newOrders.forEach(order => {
+                            fetch('http://localhost:8181/print', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ tableId: order.tableId, items: order.items, orderId: order.id })
+                            }).catch(() => {});
+                        });
+                    }
                 }
             } else {
                 initialLoadRef.current = false;
             }
             
-            // Sadece başlık bilgisini güncelle (opsiyonel)
+            const currentPending = adminData.pendingOrders?.filter((o:any) => o.status === 'bekliyor') || [];
             const pendingCount = currentPending.length;
             if (pendingCount > 0) {
                 document.title = `(${pendingCount}) Yeni Sipariş! - Aspava`;
@@ -75,7 +95,7 @@ export default function Panel() {
                 document.title = 'SB Aspava Panel';
             }
             
-            prevOrdersRef.current = new Set(currentPending.map((o:any) => o.id));
+            prevOrdersRef.current = new Set(allOrders.map((o:any) => o.id));
         }
     }, [adminData]);
 
@@ -140,50 +160,18 @@ export default function Panel() {
 
             const channel = pusher.subscribe('admin-channel');
             channel.bind('new-order', function(data: any) {
-                // Her sipariş geldiğinde sesi çal
-                const vol = parseFloat(localStorage.getItem('volume') || '1');
-                if (vol > 0) {
-                    const el = document.getElementById('notificationSound') as HTMLAudioElement;
-                    if (el) {
-                        el.volume = vol;
-                        el.currentTime = 0;
-                        el.play().catch(()=>{});
-                    }
-                }
-
                 fetch('/api/admin')
                     .then(res => res.json())
                     .then(db => {
                         setAdminData(db);
-                        if (db.settings?.autoApprove) {
-                            const orderId = data?.orderId;
-                            if (orderId) {
-                                // Bul ve yazdır
-                                let order;
-                                for (const tId in db.tables) {
-                                    const o = db.tables[tId].orders.find((o: any) => o.id === orderId);
-                                    if (o) { order = o; break; }
-                                }
-                                if (!order && db.pendingOrders) {
-                                    order = db.pendingOrders.find((o: any) => o.id === orderId);
-                                }
-                                
-                                if (order) {
-                                    // Fiş yazdır
-                                    fetch('http://localhost:8181/print', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ tableId: order.tableId, items: order.items, orderId: order.id })
-                                    }).catch(() => {});
-                                }
-
-                                // Frontend üzerinden zorla onayla (Canlı sunucu main'de kaldığı için)
-                                fetch('/api/admin', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ action: 'approve_order', orderId: orderId })
-                                }).then(() => fetchAdminData());
-                            }
+                        // Eğer canlı sunucu main branch'ta kaldıysa, gelen siparişleri bekleyende (pending)
+                        // tutacaktır. Biz front-end'den otomatik onaylamak zorundayız.
+                        if (db.settings?.autoApprove && data?.orderId) {
+                            fetch('/api/admin', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'approve_order', orderId: data.orderId })
+                            }).then(() => fetchAdminData());
                         }
                     });
             });
