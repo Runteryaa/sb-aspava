@@ -788,7 +788,7 @@ export default function Panel() {
                                                     <div key={idx} className="flex justify-between items-center bg-orange-50 border border-orange-200 p-3 rounded-lg shadow-sm">
                                                         <div className="flex-1">
                                                             <div className="font-bold text-gray-800 text-sm flex items-center gap-2">
-                                                                <span className="bg-brand-red text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">🔥 {item.count}</span>
+                                                                <span className="bg-brand-red text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">🔥 Popüler</span>
                                                                 {item.name}
                                                             </div>
                                                             <div className="text-brand-red font-black text-xs mt-0.5">{item.price > 0 ? `${item.price} TL` : '—'}</div>
