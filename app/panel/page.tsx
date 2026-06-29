@@ -712,12 +712,14 @@ export default function Panel() {
             
             {/* Add to Table Modal */}
             {addingToTable && menuData && (() => {
-                // Tüm masaların sipariş geçmişinden popüler ürünleri hesapla
+                // Son 7 günün popüler ürünleri (iptal hariç)
+                const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
                 const itemCounts: Record<string, { name: string; price: number; count: number }> = {};
                 if (adminData?.tables) {
                     Object.values(adminData.tables).forEach((table: any) => {
                         (table.orders || []).forEach((order: any) => {
                             if (order.status === 'iptal') return;
+                            if (!order.timestamp || new Date(order.timestamp).getTime() < sevenDaysAgo) return;
                             (order.items || []).forEach((item: any) => {
                                 const key = item.name;
                                 if (!itemCounts[key]) itemCounts[key] = { name: item.name, price: item.price || 0, count: 0 };
