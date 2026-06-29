@@ -18,6 +18,9 @@ export async function GET() {
         if (cleanInactiveTables(db)) {
             await redis.set('aspava:tables', db);
         }
+
+        const rawLog: any = await redis.get('aspava:orderLog');
+        db.orderLog = Array.isArray(rawLog) ? rawLog : [];
         
         return NextResponse.json(db);
     } catch (error) {

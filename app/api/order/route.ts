@@ -37,6 +37,20 @@ export async function POST(request: Request) {
 
         await redis.set('aspava:tables', db);
 
+        // Global sipariş loguna ekle (popüler ürün hesabı için)
+        const logEntry = {
+            id: newOrder.id,
+            items: newOrder.items,
+            timestamp: newOrder.timestamp
+        };
+        const rawLog: any = await redis.get('aspava:orderLog');
+        const orderLog: any[] = Array.isArray(rawLog) ? rawLog : [];
+        orderLog.push(logEntry);
+        // 90 günden eski kayıtları temizle
+        const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
+        const cleanedLog = orderLog.filter((e: any) => new Date(e.timestamp).getTime() > ninetyDaysAgo);
+        await redis.set('aspava:orderLog', cleanedLog);
+
         // Trigger real-time push to admin panel
         await triggerPusherEdge("admin-channel", "new-order", {
             orderId: newOrder.id,

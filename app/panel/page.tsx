@@ -712,22 +712,18 @@ export default function Panel() {
             
             {/* Add to Table Modal */}
             {addingToTable && menuData && (() => {
-                // Son 7 günün popüler ürünleri (iptal hariç)
+                // Son 7 günün popüler ürünleri — global sipariş logundan (iptal edilenler yok)
                 const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
                 const itemCounts: Record<string, { name: string; price: number; count: number }> = {};
-                if (adminData?.tables) {
-                    Object.values(adminData.tables).forEach((table: any) => {
-                        (table.orders || []).forEach((order: any) => {
-                            if (order.status === 'iptal') return;
-                            if (!order.timestamp || new Date(order.timestamp).getTime() < sevenDaysAgo) return;
-                            (order.items || []).forEach((item: any) => {
-                                const key = item.name;
-                                if (!itemCounts[key]) itemCounts[key] = { name: item.name, price: item.price || 0, count: 0 };
-                                itemCounts[key].count += item.qty || 1;
-                            });
-                        });
+                const log: any[] = Array.isArray(adminData?.orderLog) ? adminData.orderLog : [];
+                log.forEach((entry: any) => {
+                    if (!entry.timestamp || new Date(entry.timestamp).getTime() < sevenDaysAgo) return;
+                    (entry.items || []).forEach((item: any) => {
+                        const key = item.name;
+                        if (!itemCounts[key]) itemCounts[key] = { name: item.name, price: item.price || 0, count: 0 };
+                        itemCounts[key].count += item.qty || 1;
                     });
-                }
+                });
                 const popularItems = Object.values(itemCounts).sort((a, b) => b.count - a.count).slice(0, 20);
 
                 return (
