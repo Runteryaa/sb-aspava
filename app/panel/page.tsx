@@ -2,6 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Pusher from 'pusher-js';
+
+const normalizeText = (text: string) => {
+    return text.toLocaleLowerCase('tr-TR')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c');
+};
 export default function Panel() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [password, setPassword] = useState('');
@@ -270,6 +280,17 @@ export default function Panel() {
         setMenuData(newData);
     };
 
+    const moveItem = (categoryKey: string, index: number, direction: number) => {
+        const newData = { ...menuData };
+        const items = newData[categoryKey].items;
+        if (index + direction >= 0 && index + direction < items.length) {
+            const temp = items[index];
+            items[index] = items[index + direction];
+            items[index + direction] = temp;
+            setMenuData(newData);
+        }
+    };
+
     const handleSaveMenu = async () => {
         setSaving(true);
         setMessage('');
@@ -501,7 +522,7 @@ export default function Panel() {
                                                         1.5 Porsiyon Aktif
                                                     </label>
                                                 </div>
-                                                <div className="w-28 flex items-center gap-2">
+                                                <div className="w-36 flex items-center gap-2">
                                                     <input 
                                                         type="number" 
                                                         value={item.price || ''}
@@ -510,6 +531,10 @@ export default function Panel() {
                                                         className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg p-2 text-sm font-bold"
                                                     />
                                                     <button onClick={() => handleDeleteItem(categoryKey, index)} className="text-red-400 hover:text-red-600 text-xl font-bold" title="Sil">×</button>
+                                                    <div className="flex flex-col border-l pl-2 border-gray-200 justify-center h-full gap-1">
+                                                        <button onClick={() => moveItem(categoryKey, index, -1)} disabled={index === 0} className="text-gray-400 hover:text-gray-800 disabled:opacity-20 leading-none" title="Yukarı Taşı"><i className="fa-solid fa-chevron-up text-xs"></i></button>
+                                                        <button onClick={() => moveItem(categoryKey, index, 1)} disabled={index === category.items.length - 1} className="text-gray-400 hover:text-gray-800 disabled:opacity-20 leading-none" title="Aşağı Taşı"><i className="fa-solid fa-chevron-down text-xs"></i></button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -701,7 +726,7 @@ export default function Panel() {
                             {Object.keys(menuData).map((catKey) => {
                                 const category = menuData[catKey];
                                 const filteredItems = category.items.filter((item: any) => 
-                                    item.name.toLowerCase().includes(adminSearchQuery.toLowerCase())
+                                    normalizeText(item.name).includes(normalizeText(adminSearchQuery))
                                 );
                                 if (filteredItems.length === 0) return null;
 
