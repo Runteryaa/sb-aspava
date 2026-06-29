@@ -61,15 +61,23 @@
   "icecekler": {
     "title": "İçecekler",
     "items": [
-      { "name": "Coca Cola / Coca Cola Zero", "desc": "Su, Şeker, Aroma, Karbondioksit", "price": "" },
-      { "name": "Fanta", "desc": "Su, Şeker, Aroma, Karbondioksit", "price": "" },
-      { "name": "Fuse Tea", "desc": "Kutu İçecek", "price": "" },
-      { "name": "Ayran (Büyük Boy)", "desc": "Yoğurt, Su, Tuz", "price": "" },
-      { "name": "Sprite / Soda / Su / Şalgam", "desc": "Soğuk İçecekler", "price": "" },
-      { "name": "Çay", "desc": "Mineral, Su, Çay yaprağı", "price": "" },
-      { "name": "1 Lt. Ayran", "desc": "Yoğurt, Su, Tuz", "price": "" },
-      { "name": "1 Lt. Coca Cola / Zero / Fanta", "desc": "Su, Şeker, Aroma, Karbondioksit", "price": "" },
-      { "name": "2.5 Lt. Coca Cola / Fanta", "desc": "Su, Şeker, Aroma, Karbondioksit", "price": "" }
+      { "name": "Coca Cola", "desc": "Kutu 330ml", "price": "" },
+      { "name": "Coca Cola Zero", "desc": "Kutu 330ml", "price": "" },
+      { "name": "Fanta", "desc": "Kutu 330ml", "price": "" },
+      { "name": "Sprite", "desc": "Kutu 330ml", "price": "" },
+      { "name": "Cappy", "desc": "Karışık / Şeftali / Vişne", "price": "" },
+      { "name": "Fuse Tea", "desc": "Şeftali / Limon", "price": "" },
+      { "name": "Ayran", "desc": "Büyük Boy", "price": "" },
+      { "name": "Şalgam", "desc": "Acılı / Acısız", "price": "" },
+      { "name": "Soda", "desc": "Sade Maden Suyu", "price": "" },
+      { "name": "Su", "desc": "Pet Şişe Su", "price": "" },
+      { "name": "Çay", "desc": "İnce Belli Bardak", "price": "" },
+      { "name": "1 Lt. Ayran", "desc": "1 Litre Kutu", "price": "" },
+      { "name": "1 Lt. Coca Cola", "desc": "1 Litre Pet", "price": "" },
+      { "name": "1 Lt. Coca Cola Zero", "desc": "1 Litre Pet", "price": "" },
+      { "name": "1 Lt. Fanta", "desc": "1 Litre Pet", "price": "" },
+      { "name": "2.5 Lt. Coca Cola", "desc": "2.5 Litre Pet", "price": "" },
+      { "name": "2.5 Lt. Fanta", "desc": "2.5 Litre Pet", "price": "" }
     ]
   }
 }

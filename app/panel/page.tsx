@@ -572,6 +572,11 @@ export default function Panel() {
                                                         <span className="text-gray-500 font-normal text-sm">₺{((item.price || 0) * item.qty).toFixed(2)}</span>
                                                     </li>
                                                 ))}
+                                                {order.note && (
+                                                    <div className="mt-3 bg-yellow-50 border border-yellow-200 p-2 rounded text-sm text-yellow-800 font-medium leading-tight">
+                                                        <span className="font-black text-yellow-900">Not:</span> {order.note}
+                                                    </div>
+                                                )}
                                                 <div className="flex justify-between font-black text-lg pt-2 mt-2 border-t border-gray-200">
                                                     <span>Toplam:</span>
                                                     <span className="text-brand-red">₺{order.items.reduce((s:number, i:any) => s + (i.price || 0) * i.qty, 0).toFixed(2)}</span>
@@ -650,6 +655,11 @@ export default function Panel() {
                                                                             <span className="text-gray-500 font-normal text-xs">₺{((i.price || 0) * i.qty).toFixed(2)}</span>
                                                                         </div>
                                                                     ))}
+                                                                    {order.note && (
+                                                                        <div className="mt-2 bg-yellow-50 border border-yellow-200 p-1.5 rounded text-xs text-yellow-800 font-medium leading-tight">
+                                                                            <span className="font-black text-yellow-900">Not:</span> {order.note}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                                 {order.status !== 'iptal' && (
                                                                     <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">

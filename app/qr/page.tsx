@@ -20,6 +20,7 @@ export default function QRMenu() {
     const [cart, setCart] = useState<{name: string, price: number, qty: number}[]>([]);
     const [cartOpen, setCartOpen] = useState(false);
     const [ordering, setOrdering] = useState(false);
+    const [orderNote, setOrderNote] = useState('');
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [isReadOnly, setIsReadOnly] = useState<boolean>(true);
     const [hasCheckedSession, setHasCheckedSession] = useState<boolean>(false);
@@ -159,7 +160,7 @@ export default function QRMenu() {
             const res = await fetch('/api/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tableId, sessionId, items: cart })
+                body: JSON.stringify({ tableId, sessionId, items: cart, note: orderNote })
             });
             const data = await res.json();
             if (data.error) {
@@ -167,6 +168,7 @@ export default function QRMenu() {
             } else {
                 alert("Siparişiniz başarıyla alındı! Afiyet olsun.");
                 setCart([]);
+                setOrderNote('');
                 setCartOpen(false);
                 checkTableSession(tableId, sessionId);
             }
@@ -300,7 +302,11 @@ export default function QRMenu() {
                             </div>
                             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-2">
                                 {category.items.map((item: any, index: number) => (
-                                    <div key={index} className="menu-item p-3 sm:p-4 flex justify-between items-center gap-4 hover:bg-gray-50 transition-colors rounded-xl border-b border-dashed border-gray-200 last:border-b-0">
+                                    <div 
+                                        key={index} 
+                                        onDoubleClick={() => { if (tableId && !isReadOnly && item.price) addToCart(item); }}
+                                        className="menu-item p-3 sm:p-4 flex justify-between items-center gap-4 hover:bg-gray-50 transition-colors rounded-xl border-b border-dashed border-gray-200 last:border-b-0 cursor-pointer select-none"
+                                    >
                                         <div className="flex-1">
                                             <h3 className="font-bold text-gray-900 text-lg">{item.name}</h3>
                                             {item.desc && <p className="text-sm text-gray-500 leading-tight mt-0.5">{item.desc}</p>}
@@ -426,6 +432,15 @@ export default function QRMenu() {
                                     <span className="font-bold text-gray-600">{c.price * c.qty} TL</span>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="px-5 pb-3">
+                            <textarea 
+                                value={orderNote}
+                                onChange={(e) => setOrderNote(e.target.value)}
+                                placeholder="Sipariş notunuz (Örn: Acılı olsun, limon bol olsun...)"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-brand-red outline-none resize-none h-16 text-gray-800"
+                            />
                         </div>
 
                         <div className="p-5 bg-gray-50 border-t">

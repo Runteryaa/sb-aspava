@@ -5,7 +5,7 @@ import { triggerPusherEdge } from '@/lib/pusherEdge';
 
 export async function POST(request: Request) {
     try {
-        const { tableId, sessionId, items } = await request.json();
+        const { tableId, sessionId, items, note } = await request.json();
         const db: any = await redis.get('aspava:tables');
         
         if (!db || !db.tables) return NextResponse.json({ error: 'DB error' }, { status: 500 });
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
             id: db.orderCounter.toString(),
             tableId,
             items,
+            note: note || '',
             status: isAutoApprove ? 'onaylandi' : 'bekliyor', // bekliyor, onaylandi, iptal
             timestamp: new Date().toISOString()
         };
@@ -40,7 +41,8 @@ export async function POST(request: Request) {
         await triggerPusherEdge("admin-channel", "new-order", {
             orderId: newOrder.id,
             tableId: newOrder.tableId,
-            items: newOrder.items
+            items: newOrder.items,
+            note: newOrder.note
         });
 
         return NextResponse.json({ success: true, orderId: newOrder.id });
