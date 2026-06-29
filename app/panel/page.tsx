@@ -30,6 +30,7 @@ export default function Panel() {
     const [addingToTable, setAddingToTable] = useState<string | null>(null);
     const [adminCart, setAdminCart] = useState<{name: string, price: number, qty: number}[]>([]);
     const [adminSearchQuery, setAdminSearchQuery] = useState('');
+    const [adminModalTab, setAdminModalTab] = useState<'all' | 'popular'>('popular');
 
     const [adminData, setAdminData] = useState<any>(null);
     const audioUnlockedRef = useRef(false);
@@ -710,78 +711,170 @@ export default function Panel() {
             </div>
             
             {/* Add to Table Modal */}
-            {addingToTable && menuData && (
+            {addingToTable && menuData && (() => {
+                // Tüm masaların sipariş geçmişinden popüler ürünleri hesapla
+                const itemCounts: Record<string, { name: string; price: number; count: number }> = {};
+                if (adminData?.tables) {
+                    Object.values(adminData.tables).forEach((table: any) => {
+                        (table.orders || []).forEach((order: any) => {
+                            if (order.status === 'iptal') return;
+                            (order.items || []).forEach((item: any) => {
+                                const key = item.name;
+                                if (!itemCounts[key]) itemCounts[key] = { name: item.name, price: item.price || 0, count: 0 };
+                                itemCounts[key].count += item.qty || 1;
+                            });
+                        });
+                    });
+                }
+                const popularItems = Object.values(itemCounts).sort((a, b) => b.count - a.count).slice(0, 20);
+
+                return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
                     <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-fade-in">
                         <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-2xl">
                             <h2 className="text-xl font-black text-gray-800">Masa {addingToTable} - Ürün Ekle</h2>
-                            <button onClick={() => { setAddingToTable(null); setAdminCart([]); setAdminSearchQuery(''); }} className="text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full transition-colors">
+                            <button onClick={() => { setAddingToTable(null); setAdminCart([]); setAdminSearchQuery(''); setAdminModalTab('popular'); }} className="text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full transition-colors">
                                 <i className="fa-solid fa-xmark"></i>
                             </button>
                         </div>
-                        <div className="px-5 py-3 border-b border-gray-100 bg-white">
-                            <div className="relative">
-                                <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                <input 
-                                    type="text" 
-                                    placeholder="Ürün ara..." 
-                                    value={adminSearchQuery}
-                                    onChange={(e) => setAdminSearchQuery(e.target.value)}
-                                    autoFocus
-                                    className="w-full bg-gray-100 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-brand-red text-gray-800 font-medium outline-none transition-all"
-                                />
+                        <div className="px-5 pt-3 pb-2 border-b border-gray-100 bg-white space-y-2">
+                            {/* Sekmeler */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setAdminModalTab('popular')}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${
+                                        adminModalTab === 'popular' ? 'bg-brand-red text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    <i className="fa-solid fa-fire"></i> Popüler
+                                </button>
+                                <button
+                                    onClick={() => setAdminModalTab('all')}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${
+                                        adminModalTab === 'all' ? 'bg-brand-red text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    <i className="fa-solid fa-list"></i> Tüm Menü
+                                </button>
                             </div>
+                            {/* Arama — sadece Tüm Menü sekmesinde göster */}
+                            {adminModalTab === 'all' && (
+                                <div className="relative">
+                                    <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ürün ara..." 
+                                        value={adminSearchQuery}
+                                        onChange={(e) => setAdminSearchQuery(e.target.value)}
+                                        autoFocus
+                                        className="w-full bg-gray-100 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-brand-red text-gray-800 font-medium outline-none transition-all"
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div className="flex-1 overflow-y-auto p-5 space-y-6">
-                            {Object.keys(menuData).map((catKey) => {
-                                const category = menuData[catKey];
-                                const filteredItems = category.items.filter((item: any) => 
-                                    normalizeText(item.name).includes(normalizeText(adminSearchQuery))
-                                );
-                                if (filteredItems.length === 0) return null;
-
-                                return (
-                                <div key={catKey}>
-                                    <h3 className="font-bold text-gray-700 text-lg mb-3 border-b pb-1">{category.title}</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {filteredItems.map((item: any, idx: number) => {
-                                            const cartItem = adminCart.find(c => c.name === item.name);
-                                            return (
-                                                <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-200 p-3 rounded-lg shadow-sm">
-                                                    <div className="flex-1">
-                                                        <div className="font-bold text-gray-800 text-sm">{item.name}</div>
-                                                        <div className="text-brand-red font-black text-xs">{item.price} TL</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 bg-white rounded shadow-sm p-1">
-                                                        <button 
-                                                            onClick={() => {
-                                                                if(cartItem && cartItem.qty > 1) {
-                                                                    setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c));
-                                                                } else {
-                                                                    setAdminCart(adminCart.filter(c => c.name !== item.name));
-                                                                }
-                                                            }}
-                                                            className="w-7 h-7 flex items-center justify-center bg-gray-100 text-brand-red rounded active:scale-95"
-                                                        ><i className="fa-solid fa-minus text-xs"></i></button>
-                                                        <span className="w-5 text-center font-bold text-gray-800 text-sm">{cartItem ? cartItem.qty : 0}</span>
-                                                        <button 
-                                                            onClick={() => {
-                                                                if(cartItem) {
-                                                                    setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c));
-                                                                } else {
-                                                                    setAdminCart([...adminCart, { name: item.name, price: parseFloat(item.price || '0'), qty: 1 }]);
-                                                                }
-                                                            }}
-                                                            className="w-7 h-7 flex items-center justify-center bg-brand-red text-white rounded active:scale-95"
-                                                        ><i className="fa-solid fa-plus text-xs"></i></button>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
+                            {adminModalTab === 'popular' ? (
+                                popularItems.length === 0 ? (
+                                    <div className="text-center text-gray-400 py-12">
+                                        <i className="fa-solid fa-fire text-4xl mb-3 block opacity-30"></i>
+                                        <p className="font-bold">Henüz sipariş verisi yok.</p>
+                                        <p className="text-sm">Siparişler geldikçe popüler ürünler burada görünecek.</p>
                                     </div>
-                                </div>
-                                );
-                            })}
+                                ) : (
+                                    <div>
+                                        <p className="text-xs text-gray-400 font-medium mb-3">Tüm zamanların en çok tercih edilen ürünleri</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {popularItems.map((item, idx) => {
+                                                const cartItem = adminCart.find(c => c.name === item.name);
+                                                return (
+                                                    <div key={idx} className="flex justify-between items-center bg-orange-50 border border-orange-200 p-3 rounded-lg shadow-sm">
+                                                        <div className="flex-1">
+                                                            <div className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                                                                <span className="bg-brand-red text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">🔥 {item.count}</span>
+                                                                {item.name}
+                                                            </div>
+                                                            <div className="text-brand-red font-black text-xs mt-0.5">{item.price > 0 ? `${item.price} TL` : '—'}</div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 bg-white rounded shadow-sm p-1">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if(cartItem && cartItem.qty > 1) {
+                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c));
+                                                                    } else {
+                                                                        setAdminCart(adminCart.filter(c => c.name !== item.name));
+                                                                    }
+                                                                }}
+                                                                className="w-7 h-7 flex items-center justify-center bg-gray-100 text-brand-red rounded active:scale-95"
+                                                            ><i className="fa-solid fa-minus text-xs"></i></button>
+                                                            <span className="w-5 text-center font-bold text-gray-800 text-sm">{cartItem ? cartItem.qty : 0}</span>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if(cartItem) {
+                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c));
+                                                                    } else {
+                                                                        setAdminCart([...adminCart, { name: item.name, price: item.price, qty: 1 }]);
+                                                                    }
+                                                                }}
+                                                                className="w-7 h-7 flex items-center justify-center bg-brand-red text-white rounded active:scale-95"
+                                                            ><i className="fa-solid fa-plus text-xs"></i></button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )
+                            ) : (
+                                Object.keys(menuData).map((catKey) => {
+                                    const category = menuData[catKey];
+                                    const filteredItems = category.items.filter((item: any) => 
+                                        normalizeText(item.name).includes(normalizeText(adminSearchQuery))
+                                    );
+                                    if (filteredItems.length === 0) return null;
+
+                                    return (
+                                    <div key={catKey}>
+                                        <h3 className="font-bold text-gray-700 text-lg mb-3 border-b pb-1">{category.title}</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {filteredItems.map((item: any, idx: number) => {
+                                                const cartItem = adminCart.find(c => c.name === item.name);
+                                                return (
+                                                    <div key={idx} className="flex justify-between items-center bg-gray-50 border border-gray-200 p-3 rounded-lg shadow-sm">
+                                                        <div className="flex-1">
+                                                            <div className="font-bold text-gray-800 text-sm">{item.name}</div>
+                                                            <div className="text-brand-red font-black text-xs">{item.price} TL</div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 bg-white rounded shadow-sm p-1">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if(cartItem && cartItem.qty > 1) {
+                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c));
+                                                                    } else {
+                                                                        setAdminCart(adminCart.filter(c => c.name !== item.name));
+                                                                    }
+                                                                }}
+                                                                className="w-7 h-7 flex items-center justify-center bg-gray-100 text-brand-red rounded active:scale-95"
+                                                            ><i className="fa-solid fa-minus text-xs"></i></button>
+                                                            <span className="w-5 text-center font-bold text-gray-800 text-sm">{cartItem ? cartItem.qty : 0}</span>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if(cartItem) {
+                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c));
+                                                                    } else {
+                                                                        setAdminCart([...adminCart, { name: item.name, price: parseFloat(item.price || '0'), qty: 1 }]);
+                                                                    }
+                                                                }}
+                                                                className="w-7 h-7 flex items-center justify-center bg-brand-red text-white rounded active:scale-95"
+                                                            ><i className="fa-solid fa-plus text-xs"></i></button>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                    );
+                                })
+                            )}
                         </div>
                         <div className="p-5 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
                             <div className="flex justify-between items-center mb-4">
@@ -806,7 +899,8 @@ export default function Panel() {
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
             
             <audio id="notificationSound" src="/notification.mp3" preload="auto"></audio>
             
