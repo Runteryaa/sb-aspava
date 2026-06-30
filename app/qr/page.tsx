@@ -25,6 +25,18 @@ export default function QRMenu() {
     const [isReadOnly, setIsReadOnly] = useState<boolean>(true);
     const [hasCheckedSession, setHasCheckedSession] = useState<boolean>(false);
     
+    // Feedback states
+    const [showFeedback, setShowFeedback] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState('');
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+    // Options modal state
+    const [optionsModal, setOptionsModal] = useState<{item: any} | null>(null);
+
+    // Order success + feedback modal
+    const [orderSuccessModal, setOrderSuccessModal] = useState(false);
+    
     // API'den durumu kontrol eden fonksiyon
     const checkTableSession = (tId: string | null, sId: string | null, urlSession: string | null = null) => {
         fetch('/api/table', {
@@ -35,7 +47,11 @@ export default function QRMenu() {
         .then(res => res.json())
         .then(data => {
             if (data.error) {
-                setErrorMsg(data.error);
+                if (data.error === 'Bu oturum kapatılmış veya geçersiz.' && !errorMsg) {
+                    setShowFeedback(true);
+                } else {
+                    setErrorMsg(data.error);
+                }
             } else if (data.success) {
                 if (data.isOwner) {
                     // Masayı ilk açan kişi
@@ -131,6 +147,13 @@ export default function QRMenu() {
         };
     }, []);
 
+    const isVariantOf = (variantName: string, baseName: string) => {
+        if (variantName === baseName) return true;
+        if (!variantName.startsWith(baseName)) return false;
+        const suffix = variantName.substring(baseName.length);
+        return suffix.startsWith(' (') || suffix.startsWith(' Dürüm');
+    };
+
     const addToCart = (item: any) => {
         if (!item.price) return; // Cannot add items without price
         setCart(prev => {
@@ -142,14 +165,79 @@ export default function QRMenu() {
         });
     };
 
+    const handleAddToCartOrShowOptions = (item: any) => {
+        if (!item.price) return;
+        
+        let currentOptions = item.options ? [...item.options] : [];
+        
+        // DeepSeek'in eklediği eski sabit ayarları temizle (çakışmayı önlemek için)
+        currentOptions = currentOptions.filter(o => !['Acılı', 'Acısız', 'Tabak', 'Dürüm'].includes(o.label));
+        
+        let generatedOptions = [{ label: '', suffix: '' }];
+
+        if (item.askDurum) {
+            generatedOptions = [
+                { label: 'Tabak', suffix: '' },
+                { label: 'Dürüm', suffix: ' Dürüm' }
+            ];
+        }
+
+        if (item.askSpicy) {
+            const spicyVariants = [
+                { label: 'Acılı', suffix: ' (Acılı)' },
+                { label: 'Acısız', suffix: ' (Acısız)' }
+            ];
+            
+            if (generatedOptions.length === 1 && generatedOptions[0].label === '') {
+                generatedOptions = spicyVariants;
+            } else {
+                let combined: { label: string, suffix: string }[] = [];
+                for (let base of generatedOptions) {
+                    for (let spicy of spicyVariants) {
+                        combined.push({
+                            label: base.label + ' - ' + spicy.label,
+                            suffix: base.suffix + spicy.suffix
+                        });
+                    }
+                }
+                generatedOptions = combined;
+            }
+        }
+
+        if (generatedOptions.length > 1 || (generatedOptions.length === 1 && generatedOptions[0].label !== '')) {
+            currentOptions = [...generatedOptions, ...currentOptions];
+        }
+
+        if (currentOptions.length > 0) {
+            setOptionsModal({ item: { ...item, options: currentOptions } });
+        } else {
+            addToCart(item);
+        }
+    };
+
+    const addToCartWithOption = (item: any, option: {label: string, suffix: string}) => {
+        const itemWithOption = { ...item, name: item.name + option.suffix };
+        addToCart(itemWithOption);
+        setOptionsModal(null);
+    };
+
     const removeFromCart = (item: any) => {
         setCart(prev => {
-            const existing = prev.find(i => i.name === item.name);
+            let existing = prev.find(i => i.name === item.name);
+            if (!existing) {
+                // If exact match not found, try to find a variant
+                const isOneHalf = item.name.includes('(1.5 Porsiyon)');
+                existing = [...prev].reverse().find(i => {
+                    if (!isVariantOf(i.name, item.name)) return false;
+                    if (!isOneHalf && i.name.includes('(1.5 Porsiyon)')) return false;
+                    return true;
+                });
+            }
             if (!existing) return prev;
             if (existing.qty === 1) {
-                return prev.filter(i => i.name !== item.name);
+                return prev.filter(i => i.name !== existing.name);
             }
-            return prev.map(i => i.name === item.name ? { ...i, qty: i.qty - 1 } : i);
+            return prev.map(i => i.name === existing.name ? { ...i, qty: i.qty - 1 } : i);
         });
     };
 
@@ -166,10 +254,13 @@ export default function QRMenu() {
             if (data.error) {
                 alert("Hata: " + data.error);
             } else {
-                alert("Siparişiniz başarıyla alındı! Afiyet olsun.");
                 setCart([]);
                 setOrderNote('');
                 setCartOpen(false);
+                setRating(0);
+                setComment('');
+                setFeedbackSubmitted(false);
+                setOrderSuccessModal(true);
                 checkTableSession(tableId, sessionId);
             }
         } catch (e) {
@@ -180,6 +271,68 @@ export default function QRMenu() {
 
     const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
+
+    const submitFeedback = async () => {
+        try {
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rating, comment, tableId })
+            });
+            setFeedbackSubmitted(true);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    if (showFeedback) {
+        return (
+            <div className="min-h-screen bg-brand-light flex items-center justify-center p-6 text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-brand-red w-full max-w-md">
+                    {feedbackSubmitted ? (
+                        <div className="animate-fade-in">
+                            <i className="fa-solid fa-circle-check text-5xl text-green-500 mb-4"></i>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Teşekkürler!</h2>
+                            <p className="text-gray-600">Değerlendirmeniz başarıyla iletildi. Yine bekleriz!</p>
+                        </div>
+                    ) : (
+                        <div className="animate-fade-in">
+                            <h2 className="text-2xl font-black text-gray-900 mb-2">Bizi Değerlendirin</h2>
+                            <p className="text-gray-500 text-sm mb-6">Yemeklerimiz nasıldı? Puan vererek bize destek olabilirsiniz.</p>
+                            
+                            <div className="flex justify-center gap-2 mb-6">
+                                {[1,2,3,4,5].map(star => (
+                                    <button 
+                                        key={star}
+                                        onClick={() => setRating(star)}
+                                        className={`text-4xl transition-transform hover:scale-110 ${rating >= star ? 'text-brand-gold drop-shadow-md' : 'text-gray-200'}`}
+                                    >
+                                        <i className="fa-solid fa-star"></i>
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            <textarea
+                                value={comment}
+                                onChange={e => setComment(e.target.value)}
+                                placeholder="Eklemek istediğiniz bir not var mı? (İsteğe bağlı)"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm mb-4 outline-none focus:border-brand-red transition-colors"
+                                rows={3}
+                            ></textarea>
+                            
+                            <button 
+                                onClick={submitFeedback}
+                                disabled={rating === 0}
+                                className="w-full bg-brand-red text-white font-bold py-3 rounded-xl disabled:opacity-50 hover:bg-red-800 transition-colors"
+                            >
+                                Gönder
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     if (errorMsg) {
         return (
@@ -304,7 +457,7 @@ export default function QRMenu() {
                                 {category.items.map((item: any, index: number) => (
                                     <div 
                                         key={index} 
-                                        onDoubleClick={() => { if (tableId && !isReadOnly && item.price) addToCart(item); }}
+                                        onDoubleClick={() => { if (tableId && !isReadOnly && item.price) handleAddToCartOrShowOptions(item); }}
                                         className="menu-item p-3 sm:p-4 flex justify-between items-center gap-4 hover:bg-gray-50 transition-colors rounded-xl border-b border-dashed border-gray-200 last:border-b-0 cursor-pointer select-none"
                                     >
                                         <div className="flex-1">
@@ -318,8 +471,13 @@ export default function QRMenu() {
                                                     const showOneHalf = item.allowOneHalf === true;
                                                     const itemOneHalf = { ...item, name: item.name + ' (1.5 Porsiyon)', price: (parseFloat(item.price) * 1.5).toString() };
                                                     
-                                                    const cartItem = cart.find(c => c.name === item.name);
-                                                    const cartItemOneHalf = showOneHalf ? cart.find(c => c.name === itemOneHalf.name) : null;
+                                                    const cartItems = cart.filter(c => isVariantOf(c.name, item.name) && !c.name.includes('(1.5 Porsiyon)'));
+                                                    const totalQty = cartItems.reduce((acc, c) => acc + c.qty, 0);
+                                                    const cartItem = totalQty > 0 ? { qty: totalQty } : null;
+
+                                                    const cartItemsOneHalf = showOneHalf ? cart.filter(c => isVariantOf(c.name, itemOneHalf.name)) : [];
+                                                    const totalQtyOneHalf = cartItemsOneHalf.reduce((acc, c) => acc + c.qty, 0);
+                                                    const cartItemOneHalf = totalQtyOneHalf > 0 ? { qty: totalQtyOneHalf } : null;
                                                     
                                                     return (
                                                         <div className="flex items-center justify-end gap-2">
@@ -334,7 +492,7 @@ export default function QRMenu() {
                                                                     </button>
                                                                     <span className="font-black text-gray-800 min-w-[1rem] sm:min-w-[1.5rem] text-center text-sm sm:text-base">{cartItem.qty}</span>
                                                                     <button 
-                                                                        onClick={() => addToCart(item)}
+                                                                        onClick={() => handleAddToCartOrShowOptions(item)}
                                                                         className="w-7 h-7 sm:w-8 sm:h-8 bg-brand-red text-white rounded shadow-sm flex items-center justify-center font-bold active:scale-95"
                                                                     >
                                                                         <i className="fa-solid fa-plus text-xs sm:text-base"></i>
@@ -342,10 +500,11 @@ export default function QRMenu() {
                                                                 </div>
                                                             ) : (
                                                                 <button 
-                                                                    onClick={() => addToCart(item)}
+                                                                    onClick={() => handleAddToCartOrShowOptions(item)}
                                                                     className="bg-brand-red text-white text-sm font-bold px-3 sm:px-4 py-2 rounded-lg shadow-sm active:scale-95 transition-transform flex items-center gap-1 sm:gap-2 whitespace-nowrap"
                                                                 >
                                                                     <i className="fa-solid fa-plus"></i> Ekle
+                                                                    {item.options && item.options.length > 0 && <i className="fa-solid fa-chevron-down text-xs opacity-75"></i>}
                                                                 </button>
                                                             )}
                                                             
@@ -361,7 +520,7 @@ export default function QRMenu() {
                                                                         </button>
                                                                         <span className="font-black text-orange-800 min-w-[1rem] sm:min-w-[1.5rem] text-center text-sm sm:text-base" title="1.5 Porsiyon"><span className="text-[10px] text-orange-600 mr-0.5">1.5</span>{cartItemOneHalf.qty}</span>
                                                                         <button 
-                                                                            onClick={() => addToCart(itemOneHalf)}
+                                                                            onClick={() => handleAddToCartOrShowOptions(itemOneHalf)}
                                                                             className="w-7 h-7 sm:w-8 sm:h-8 bg-orange-500 text-white rounded shadow-sm flex items-center justify-center font-bold active:scale-95"
                                                                         >
                                                                             <i className="fa-solid fa-plus text-xs sm:text-base"></i>
@@ -369,7 +528,7 @@ export default function QRMenu() {
                                                                     </div>
                                                                 ) : (
                                                                     <button 
-                                                                        onClick={() => addToCart(itemOneHalf)}
+                                                                        onClick={() => handleAddToCartOrShowOptions(itemOneHalf)}
                                                                         className="bg-orange-500 text-white text-sm font-bold px-3 py-2 rounded-lg shadow-sm active:scale-95 transition-transform whitespace-nowrap flex items-center justify-center"
                                                                     >
                                                                         1.5
@@ -455,6 +614,107 @@ export default function QRMenu() {
                             >
                                 {ordering ? 'Sipariş İletiliyor...' : 'Siparişi Onayla'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Options Modal */}
+            {optionsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setOptionsModal(null)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="p-5 border-b bg-gray-50 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-lg font-black text-gray-900">{optionsModal.item.name}</h3>
+                                <p className="text-sm text-gray-500">Nasıl olsun?</p>
+                            </div>
+                            <button onClick={() => setOptionsModal(null)} className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600">
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div className="p-4 grid grid-cols-2 gap-3">
+                            {optionsModal.item.options.map((opt: any, i: number) => (
+                                <button
+                                    key={i}
+                                    onClick={() => addToCartWithOption(optionsModal.item, opt)}
+                                    className="bg-brand-red text-white font-bold py-4 rounded-xl text-base active:scale-95 transition-transform shadow-md hover:bg-red-800"
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Order Success + Quick Feedback Modal */}
+            {orderSuccessModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up">
+                        {/* Success Header */}
+                        <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 text-center text-white">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i className="fa-solid fa-check text-3xl"></i>
+                            </div>
+                            <h3 className="text-xl font-black">Siparişiniz Alındı!</h3>
+                            <p className="text-green-100 text-sm mt-1">Mutfağa iletildi, en kısa sürede hazırlanacak.</p>
+                        </div>
+
+                        {/* Feedback */}
+                        <div className="p-5">
+                            {feedbackSubmitted ? (
+                                <div className="text-center py-4">
+                                    <p className="font-bold text-gray-700">Teşekkürler! 🙏</p>
+                                    <p className="text-sm text-gray-500 mt-1">Değerlendirmeniz iletildi.</p>
+                                    <button
+                                        onClick={() => setOrderSuccessModal(false)}
+                                        className="mt-4 w-full bg-brand-red text-white font-bold py-3 rounded-xl hover:bg-red-800 transition-colors"
+                                    >
+                                        Kapat
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-center text-sm font-bold text-gray-600 mb-4">Bu sistemi beğendiniz mi?</p>
+                                    <div className="flex justify-center gap-3 mb-5">
+                                        {[1,2,3,4,5].map(star => (
+                                            <button
+                                                key={star}
+                                                onClick={() => setRating(star)}
+                                                className={`text-4xl transition-transform active:scale-90 hover:scale-110 ${rating >= star ? 'text-yellow-400 drop-shadow' : 'text-gray-200'}`}
+                                            >
+                                                <i className="fa-solid fa-star"></i>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {rating > 0 && (
+                                        <textarea
+                                            value={comment}
+                                            onChange={e => setComment(e.target.value)}
+                                            placeholder="İsteğe bağlı bir yorum bırakabilirsiniz..."
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm mb-3 outline-none focus:border-brand-red transition-colors resize-none"
+                                            rows={2}
+                                        ></textarea>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setOrderSuccessModal(false)}
+                                            className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm"
+                                        >
+                                            Geç
+                                        </button>
+                                        <button
+                                            onClick={submitFeedback}
+                                            disabled={rating === 0}
+                                            className="flex-1 bg-brand-red text-white font-bold py-3 rounded-xl disabled:opacity-40 hover:bg-red-800 transition-colors text-sm"
+                                        >
+                                            Gönder
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

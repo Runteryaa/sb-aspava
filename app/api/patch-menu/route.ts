@@ -12,22 +12,36 @@ export async function GET() {
         let m = typeof currentMenuData === 'string' ? JSON.parse(currentMenuData) : currentMenuData;
         const newM = newMenuData as any;
         
-        // Sadece açıklamaları (desc) güncelleyelim, fiyatları ve diğer ayarları koruyalım
-        Object.keys(m).forEach(cat => {
-            if (m[cat] && m[cat].items && newM[cat] && newM[cat].items) {
-                m[cat].items = m[cat].items.map((item: any) => {
-                    // Yeni dosyada aynı ada sahip ürünü bul
-                    const match = newM[cat].items.find((newItem: any) => newItem.name === item.name);
-                    if (match) {
-                        item.desc = match.desc; // Gramaj ve içindekiler bilgisini al
-                    }
-                    return item;
-                });
+        Object.keys(newM).forEach(cat => {
+            if (!m[cat]) {
+                // Kategori Redis'te yoksa direkt ekle
+                m[cat] = newM[cat];
+                return;
             }
+            
+            newM[cat].items.forEach((newItem: any) => {
+                const existingIdx = m[cat].items.findIndex((i: any) => i.name === newItem.name);
+                
+                if (existingIdx !== -1) {
+                    // Mevcut ürün: desc, options, allowOneHalf güncelle, fiyatı koru
+                    m[cat].items[existingIdx].desc = newItem.desc;
+                    if (newItem.options !== undefined) {
+                        m[cat].items[existingIdx].options = newItem.options;
+                    } else {
+                        delete m[cat].items[existingIdx].options;
+                    }
+                    if (newItem.allowOneHalf !== undefined) {
+                        m[cat].items[existingIdx].allowOneHalf = newItem.allowOneHalf;
+                    }
+                } else {
+                    // Yeni ürün: Redis'e ekle (fiyatsız, sonradan eklenebilir)
+                    m[cat].items.push({ ...newItem });
+                }
+            });
         });
         
         await redis.set('aspava:menu', m);
-        return NextResponse.json({ success: true, message: 'Menü açıklamaları, gramajlar ve içindekiler başarıyla güncellendi. Fiyatlarınız korundu!' });
+        return NextResponse.json({ success: true, message: 'Menü güncellendi: açıklamalar, seçenekler ve yeni ürünler senkronize edildi. Fiyatlarınız korundu!' });
     } catch(e: any) {
         return NextResponse.json({ error: String(e) });
     }

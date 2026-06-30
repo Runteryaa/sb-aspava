@@ -2,82 +2,79 @@
   "kahvalti": {
     "title": "Patates ve Çorba",
     "items": [
-      { "name": "Mercimek Çorbası", "desc": "Mercimek, Soğan, Havuç, Et suyu, Tereyağı", "price": "" },
-      { "name": "Patates Kızartması", "desc": "Patates, Sıvı yağ, Tuz | ~300 Gr", "price": "" }
+      { "name": "Mercimek Çorbası", "desc": "Mercimek, Soğan, Havuç, Et suyu, Tereyağı | 120 kcal", "price": "" },
+      { "name": "Patates Kızartması", "desc": "Patates, Sıvı yağ, Tuz | ~300 Gr | 250 kcal", "price": "" }
     ]
   },
   "pideler": {
     "title": "Pideler & Lahmacun",
     "items": [
-      { "name": "Beyaz Peynirli Pide", "desc": "Beyaz peynir, Maydanoz, Yumurta", "price": "" },
-      { "name": "Mantarlı Pide", "desc": "Mantar, Kaşar peyniri, Domates, Biber", "price": "" },
-      { "name": "Sucuklu Pide", "desc": "Dana sucuk, Kaşar peyniri, Tereyağı", "price": "" },
-      { "name": "Kıymalı Pide", "desc": "Dana kıyma, Soğan, Domates, Biber", "price": "" },
-      { "name": "Kıymalı Yumurtalı", "desc": "Dana kıyma, Yumurta, Soğan, Baharat", "price": "" },
-      { "name": "Kıymalı Kaşarlı", "desc": "Dana kıyma, Kaşar peyniri, Soğan", "price": "" },
-      { "name": "Kuşbaşılı Pide", "desc": "Kuşbaşı dana eti, Domates, Yeşil biber", "price": "" },
-      { "name": "Kuşbaşılı Kaşarlı", "desc": "Kuşbaşı dana eti, Kaşar peyniri, Biber", "price": "" },
-      { "name": "Kuşbaşılı Yumurtalı", "desc": "Kuşbaşı dana eti, Yumurta, Domates", "price": "" },
-      { "name": "Kaşarlı Pide", "desc": "Odun ateşinde kızarmış bol kaşarlı pide.", "price": "" },
-      { "name": "Karışık Pide", "desc": "Kıyma, Kuşbaşı, Sucuk, Kaşar peyniri", "price": "" },
-      { "name": "Tavuklu Pide", "desc": "Tavuk göğsü, Kaşar peyniri, Domates, Biber", "price": "" },
-      { "name": "Kapalı Karadeniz", "desc": "Dana eti/kıyma, Soğan, Bol tereyağı", "price": "" },
-      { "name": "Kapalı Kaşarlı", "desc": "Kaşar peyniri, Tereyağı, Özel hamur", "price": "" },
-      { "name": "Lahmacun Acısız", "desc": "Dana kıyma, Sarımsak, Domates, Maydanoz", "price": "" },
-      { "name": "Lahmacun Acılı", "desc": "Dana kıyma, Sarımsak, Domates, Maydanoz", "price": "" },
-      { "name": "Antep Lahmacun", "desc": "Zırh kıyması, Bol sarımsak, Baharat", "price": "" },
-      { "name": "Peymacun", "desc": "Peynir, Maydanoz, Lahmacun hamuru", "price": "" }
+      { "name": "Beyaz Peynirli Pide", "desc": "Beyaz peynir, Maydanoz, Yumurta | 350 kcal", "price": "" },
+      { "name": "Mantarlı Pide", "desc": "Mantar, Kaşar peyniri, Domates, Biber | 370 kcal", "price": "" },
+      { "name": "Sucuklu Pide", "desc": "Dana sucuk, Kaşar peyniri, Tereyağı | 450 kcal", "price": "" },
+      { "name": "Kıymalı Pide", "desc": "Dana kıyma, Soğan, Domates, Biber | 400 kcal", "price": "" },
+      { "name": "Kıymalı Yumurtalı", "desc": "Dana kıyma, Yumurta, Soğan, Baharat | 420 kcal", "price": "" },
+      { "name": "Kıymalı Kaşarlı", "desc": "Dana kıyma, Kaşar peyniri, Soğan | 430 kcal", "price": "" },
+      { "name": "Kuşbaşılı Pide", "desc": "Kuşbaşı dana eti, Domates, Yeşil biber | 450 kcal", "price": "" },
+      { "name": "Kuşbaşılı Kaşarlı", "desc": "Kuşbaşı dana eti, Kaşar peyniri, Biber | 480 kcal", "price": "" },
+      { "name": "Kuşbaşılı Yumurtalı", "desc": "Kuşbaşı dana eti, Yumurta, Domates | 460 kcal", "price": "" },
+      { "name": "Kaşarlı Pide", "desc": "Odun ateşinde kızarmış bol kaşarlı pide. | 490 kcal", "price": "" },
+      { "name": "Karışık Pide", "desc": "Kıyma, Kuşbaşı, Sucuk, Kaşar peyniri | 520 kcal", "price": "" },
+      { "name": "Tavuklu Pide", "desc": "Tavuk göğsü, Kaşar peyniri, Domates, Biber | 400 kcal", "price": "" },
+      { "name": "Kapalı Karadeniz", "desc": "Dana eti/kıyma, Soğan, Bol tereyağı | 500 kcal", "price": "" },
+      { "name": "Kapalı Kaşarlı", "desc": "Kaşar peyniri, Tereyağı, Özel hamur | 450 kcal", "price": "" },
+      { "name": "Lahmacun", "desc": "Dana kıyma, Sarımsak, Domates, Maydanoz | 210 kcal", "price": "" },
+      { "name": "Antep Lahmacun", "desc": "Zırh kıyması, Bol sarımsak, Baharat | 220 kcal", "price": "" },
+      { "name": "Peymacun", "desc": "Peynir, Maydanoz, Lahmacun hamuru | 200 kcal", "price": "" }
     ]
   },
   "kebaplar": {
     "title": "Kebaplar & Dürümler",
     "items": [
-      { "name": "Adana Kebap", "desc": "Zırh kıyması, Kuyruk yağı, Pul biber (Acılı) | ~180 Gr", "price": "" },
-      { "name": "Adana Dürüm", "desc": "Zırh kıyması, Kuyruk yağı, Pul biber (Acılı) | ~180 Gr", "price": "" },
-      { "name": "Urfa Kebap", "desc": "Zırh kıyması, Tuz, Dana/Kuzu eti (Acısız) | ~180 Gr", "price": "" },
-      { "name": "Urfa Dürüm", "desc": "Zırh kıyması, Tuz, Dana/Kuzu eti (Acısız) | ~180 Gr", "price": "" },
-      { "name": "Beyti Kebap (Soslu)", "desc": "Kebap eti, Yufka, Domates sosu, Yoğurt | ~180 Gr", "price": "" },
-      { "name": "Tavuk Şiş", "desc": "Marine tavuk eti, Yoğurt, Salça, Kekik | ~200 Gr", "price": "" },
-      { "name": "Tavuk Kanat", "desc": "Marine tavuk eti, Yoğurt, Salça, Kekik | ~220 Gr", "price": "" },
-      { "name": "Karışık Izgara", "desc": "Adana, Urfa, Tavuk, Et şiş, Kanat | ~400 Gr", "price": "" },
-      { "name": "Yoğurtlu Kebap", "desc": "Kebap eti, Pide, Yoğurt, Tereyağı | ~180 Gr", "price": "" },
-      { "name": "Sac Kavurma", "desc": "Küçük dana eti, Soğan, Biber, Domates | ~220 Gr", "price": "" },
-      { "name": "Et Şiş", "desc": "Kuşbaşı et, Kuyruk yağı, Tuz | ~220 Gr", "price": "" }
+      { "name": "Adana Kebap", "desc": "Zırh kıyması, Kuyruk yağı, Pul biber (Acılı) | ~180 Gr | 450 kcal", "price": "" },
+      { "name": "Urfa Kebap", "desc": "Zırh kıyması, Tuz, Dana/Kuzu eti (Acısız) | ~180 Gr | 430 kcal", "price": "" },
+      { "name": "Beyti Kebap (Soslu)", "desc": "Kebap eti, Yufka, Domates sosu, Yoğurt | ~180 Gr | 480 kcal", "price": "" },
+      { "name": "Tavuk Şiş", "desc": "Marine tavuk eti, Yoğurt, Salça, Kekik | ~200 Gr | 350 kcal", "price": "" },
+      { "name": "Tavuk Kanat", "desc": "Marine tavuk eti, Yoğurt, Salça, Kekik | ~220 Gr | 350 kcal", "price": "" },
+      { "name": "Karışık Izgara", "desc": "Adana, Urfa, Tavuk, Et şiş, Kanat | ~400 Gr | 550 kcal", "price": "" },
+      { "name": "Yoğurtlu Kebap", "desc": "Kebap eti, Pide, Yoğurt, Tereyağı | ~180 Gr | 500 kcal", "price": "" },
+      { "name": "Sac Kavurma", "desc": "Küçük dana eti, Soğan, Biber, Domates | ~220 Gr | 400 kcal", "price": "" },
+      { "name": "Et Şiş", "desc": "Kuşbaşı et, Kuyruk yağı, Tuz | ~220 Gr | 420 kcal", "price": "" }
     ]
   },
   "kiremitler": {
     "title": "Kiremit Lezzetleri",
     "items": [
-      { "name": "Kiremitte Kuşbaşı", "desc": "Dana eti, Domates, Biber, Sarımsak", "price": "" },
-      { "name": "Kiremitte Tavuk", "desc": "Marine tavuk eti, Domates, Biber, Sarımsak", "price": "" }
+      { "name": "Kiremitte Kuşbaşı", "desc": "Dana eti, Domates, Biber, Sarımsak | 450 kcal", "price": "" },
+      { "name": "Kiremitte Tavuk", "desc": "Marine tavuk eti, Domates, Biber, Sarımsak | 380 kcal", "price": "" }
     ]
   },
   "tatlilar": {
     "title": "Tatlılar",
     "items": [
-      { "name": "Künefe", "desc": "Kadayıf, Özel peynir, Şerbet, Fıstık", "price": "" }
+      { "name": "Künefe", "desc": "Kadayıf, Özel peynir, Şerbet, Fıstık | 430 kcal", "price": "" }
     ]
   },
   "icecekler": {
     "title": "İçecekler",
     "items": [
-      { "name": "Coca Cola", "desc": "Kutu 330ml", "price": "" },
-      { "name": "Coca Cola Zero", "desc": "Kutu 330ml", "price": "" },
-      { "name": "Fanta", "desc": "Kutu 330ml", "price": "" },
-      { "name": "Sprite", "desc": "Kutu 330ml", "price": "" },
-      { "name": "Cappy", "desc": "Karışık / Şeftali / Vişne", "price": "" },
-      { "name": "Fuse Tea", "desc": "Şeftali / Limon", "price": "" },
-      { "name": "Ayran", "desc": "Büyük Boy", "price": "" },
-      { "name": "Şalgam", "desc": "Acılı / Acısız", "price": "" },
-      { "name": "Soda", "desc": "Sade Maden Suyu", "price": "" },
-      { "name": "Su", "desc": "Pet Şişe Su", "price": "" },
-      { "name": "Çay", "desc": "İnce Belli Bardak", "price": "" },
-      { "name": "1 Lt. Ayran", "desc": "1 Litre Kutu", "price": "" },
-      { "name": "1 Lt. Coca Cola", "desc": "1 Litre Pet", "price": "" },
-      { "name": "1 Lt. Coca Cola Zero", "desc": "1 Litre Pet", "price": "" },
-      { "name": "1 Lt. Fanta", "desc": "1 Litre Pet", "price": "" },
-      { "name": "2.5 Lt. Coca Cola", "desc": "2.5 Litre Pet", "price": "" },
-      { "name": "2.5 Lt. Fanta", "desc": "2.5 Litre Pet", "price": "" }
+      { "name": "Coca Cola", "desc": "Kutu 330ml | 149 kcal", "price": "" },
+      { "name": "Coca Cola Zero", "desc": "Kutu 330ml | 0 kcal", "price": "" },
+      { "name": "Fanta", "desc": "Kutu 330ml | 149 kcal", "price": "" },
+      { "name": "Sprite", "desc": "Kutu 330ml | 149 kcal", "price": "" },
+      { "name": "Cappy", "desc": "Karışık / Şeftali / Vişne | ~150 kcal", "price": "" },
+      { "name": "Fuse Tea", "desc": "Şeftali / Limon | ~110 kcal", "price": "" },
+      { "name": "Ayran", "desc": "Büyük Boy | 100 kcal", "price": "" },
+      { "name": "Şalgam", "desc": "Acılı / Acısız | 45 kcal", "price": "" },
+      { "name": "Soda", "desc": "Sade Maden Suyu | 0-5 kcal", "price": "" },
+      { "name": "Su", "desc": "Pet Şişe Su | 0 kcal", "price": "" },
+      { "name": "Çay", "desc": "İnce Belli Bardak | 0-5 kcal", "price": "" },
+      { "name": "1 Lt. Ayran", "desc": "1 Litre Kutu | ~370 kcal", "price": "" },
+      { "name": "1 Lt. Coca Cola", "desc": "1 Litre Pet | ~450 kcal", "price": "" },
+      { "name": "1 Lt. Coca Cola Zero", "desc": "1 Litre Pet | 0 kcal", "price": "" },
+      { "name": "1 Lt. Fanta", "desc": "1 Litre Pet | ~450 kcal", "price": "" },
+      { "name": "2.5 Lt. Coca Cola", "desc": "2.5 Litre Pet | ~1130 kcal", "price": "" },
+      { "name": "2.5 Lt. Fanta", "desc": "2.5 Litre Pet | ~1130 kcal", "price": "" }
     ]
   }
 }

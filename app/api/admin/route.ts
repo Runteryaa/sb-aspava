@@ -21,6 +21,9 @@ export async function GET() {
 
         const rawLog: any = await redis.get('aspava:orderLog');
         db.orderLog = Array.isArray(rawLog) ? rawLog : [];
+
+        const rawFeedbacks: any = await redis.get('aspava:feedbacks');
+        db.feedbacks = Array.isArray(rawFeedbacks) ? rawFeedbacks : [];
         
         return NextResponse.json(db);
     } catch (error) {
@@ -111,6 +114,18 @@ export async function POST(request: Request) {
                 };
                 db.tables[tableId].orders.push(newOrder);
                 db.tables[tableId].lastActivity = Date.now();
+                
+                const rawLog: any = await redis.get('aspava:orderLog');
+                const orderLog: any[] = Array.isArray(rawLog) ? rawLog : [];
+                orderLog.push({
+                    id: newOrder.id,
+                    tableId: newOrder.tableId,
+                    items: newOrder.items,
+                    timestamp: newOrder.timestamp
+                });
+                const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+                const cleanedLog = orderLog.filter((e: any) => new Date(e.timestamp).getTime() > ninetyDaysAgo);
+                await redis.set('aspava:orderLog', cleanedLog);
             }
         } else if (action === 'update_settings' && settings) {
             db.settings = { ...db.settings, ...settings };

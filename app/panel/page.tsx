@@ -20,7 +20,7 @@ export default function Panel() {
     const [volume, setVolume] = useState(1);
     const [audioEnabled, setAudioEnabled] = useState(false);
 
-    const [activeTab, setActiveTab] = useState<'menu' | 'orders' | 'settings'>('orders');
+    const [activeTab, setActiveTab] = useState<'menu' | 'orders' | 'settings' | 'feedbacks'>('orders');
     
     // Menu States
     const [menuData, setMenuData] = useState<any>(null);
@@ -248,6 +248,18 @@ export default function Panel() {
         setMenuData(newData);
     };
 
+    const handleToggleSpicyOption = (categoryKey: string, itemIndex: number, newValue: boolean) => {
+        const newData = { ...menuData };
+        newData[categoryKey].items[itemIndex].askSpicy = newValue;
+        setMenuData(newData);
+    };
+
+    const handleToggleDurumOption = (categoryKey: string, itemIndex: number, newValue: boolean) => {
+        const newData = { ...menuData };
+        newData[categoryKey].items[itemIndex].askDurum = newValue;
+        setMenuData(newData);
+    };
+
     const handleAddCategory = () => {
         const title = prompt('Yeni kategori adı (Örn: İçecekler)');
         if (!title) return;
@@ -376,22 +388,28 @@ export default function Panel() {
                     <a href="/" className="inline-block hover:scale-105 transition-transform">
                         <h1 className="text-3xl sm:text-4xl font-logo text-brand-red tracking-wide" style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 2px 2px 0 #000', letterSpacing: '1px' }}>SB Aspava Panel</h1>
                     </a>
-                    <div className="flex gap-4 items-center flex-wrap justify-center">
-                        <div className="flex bg-gray-100 p-1 rounded-lg panel-tabs">
+                    <div className="flex gap-3 items-center flex-nowrap justify-start sm:justify-end w-full max-w-full overflow-x-auto custom-scrollbar pb-2">
+                        <div className="flex bg-gray-100 p-1 rounded-lg panel-tabs shrink-0">
                             <button 
                                 onClick={() => setActiveTab('orders')}
-                                className={`px-4 py-2 font-bold rounded-md transition-colors ${activeTab === 'orders' ? 'bg-white shadow text-brand-red active-tab' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`whitespace-nowrap px-4 py-2 font-bold rounded-md transition-colors ${activeTab === 'orders' ? 'bg-white shadow text-brand-red active-tab' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Masalar & Siparişler
                             </button>
                             <button 
                                 onClick={() => setActiveTab('menu')}
-                                className={`px-4 py-2 font-bold rounded-md transition-colors ${activeTab === 'menu' ? 'bg-white shadow text-brand-red active-tab' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`whitespace-nowrap px-4 py-2 font-bold rounded-md transition-colors ${activeTab === 'menu' ? 'bg-white shadow text-brand-red active-tab' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Menü Fiyatları
                             </button>
+                            <button 
+                                onClick={() => setActiveTab('feedbacks')}
+                                className={`whitespace-nowrap px-4 py-2 font-bold rounded-md transition-colors ${activeTab === 'feedbacks' ? 'bg-white shadow text-brand-red active-tab' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Değerlendirmeler
+                            </button>
                         </div>
-                        <div onClick={unlockAudio} className={`flex items-center gap-2 rounded-lg p-2 panel-tabs h-10 shadow-inner cursor-pointer transition-colors ${!audioEnabled ? 'bg-red-100 animate-pulse border border-red-200' : 'bg-gray-100'}`} title="Sipariş Bildirim Sesi">
+                        <div onClick={unlockAudio} className={`shrink-0 flex items-center gap-2 rounded-lg p-2 panel-tabs h-10 shadow-inner cursor-pointer transition-colors ${!audioEnabled ? 'bg-red-100 animate-pulse border border-red-200' : 'bg-gray-100'}`} title="Sipariş Bildirim Sesi">
                             <i className={`fa-solid ${!audioEnabled || volume === 0 ? 'fa-volume-xmark text-brand-red' : 'fa-volume-high text-gray-500'} w-4 text-center`}></i>
                             {audioEnabled ? (
                                 <input 
@@ -411,13 +429,13 @@ export default function Panel() {
                                             }
                                         }
                                     }}
-                                    className="w-20 sm:w-24 accent-brand-red cursor-pointer"
+                                    className="w-20 sm:w-24 accent-brand-red cursor-pointer shrink-0"
                                 />
                             ) : (
-                                <span className="text-xs font-bold text-brand-red px-2 select-none">Ses Kapalı (Açmak için tıkla)</span>
+                                <span className="text-xs font-bold text-brand-red px-2 select-none whitespace-nowrap">Ses Kapalı</span>
                             )}
                         </div>
-                        <button onClick={() => setActiveTab('settings')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTab === 'settings' ? 'bg-brand-red text-white' : 'bg-gray-800 text-white hover:bg-gray-700'}`} title="Ayarlar">
+                        <button onClick={() => setActiveTab('settings')} className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTab === 'settings' ? 'bg-brand-red text-white' : 'bg-gray-800 text-white hover:bg-gray-700'}`} title="Ayarlar">
                             <i className="fa-solid fa-gear"></i>
                         </button>
                     </div>
@@ -521,6 +539,24 @@ export default function Panel() {
                                                             className="w-4 h-4 text-brand-red rounded border-gray-300 focus:ring-brand-red"
                                                         />
                                                         1.5 Porsiyon Aktif
+                                                    </label>
+                                                    <label className="flex items-center gap-2 mt-1 text-xs font-bold text-gray-700 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={!!item.askSpicy} 
+                                                            onChange={(e) => handleToggleSpicyOption(categoryKey, index, e.target.checked)}
+                                                            className="w-4 h-4 text-brand-red rounded border-gray-300 focus:ring-brand-red"
+                                                        />
+                                                        Acılı/Acısız Seçimi Aktif
+                                                    </label>
+                                                    <label className="flex items-center gap-2 mt-1 text-xs font-bold text-gray-700 cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={!!item.askDurum} 
+                                                            onChange={(e) => handleToggleDurumOption(categoryKey, index, e.target.checked)}
+                                                            className="w-4 h-4 text-brand-red rounded border-gray-300 focus:ring-brand-red"
+                                                        />
+                                                        Tabak/Dürüm Seçimi Aktif
                                                     </label>
                                                 </div>
                                                 <div className="w-36 flex items-center gap-2">
@@ -708,9 +744,8 @@ export default function Panel() {
                         </div>
                     </div>
                 )}
-            </div>
-            
-            {/* Add to Table Modal */}
+
+            {/* Add to Table Modal - outside panel-container */}
             {addingToTable && menuData && (() => {
                 // Son 7 günün popüler ürünleri — global sipariş logundan (iptal edilenler yok)
                 const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -788,7 +823,7 @@ export default function Panel() {
                                                     <div key={idx} className="flex justify-between items-center bg-orange-50 border border-orange-200 p-3 rounded-lg shadow-sm">
                                                         <div className="flex-1">
                                                             <div className="font-bold text-gray-800 text-sm flex items-center gap-2">
-                                                                <span className="bg-brand-red text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">🔥 Popüler</span>
+                                                                <span className="bg-brand-red text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">🔥</span>
                                                                 {item.name}
                                                             </div>
                                                             <div className="text-brand-red font-black text-xs mt-0.5">{item.price > 0 ? `${item.price} TL` : '—'}</div>
@@ -825,9 +860,18 @@ export default function Panel() {
                             ) : (
                                 Object.keys(menuData).map((catKey) => {
                                     const category = menuData[catKey];
-                                    const filteredItems = category.items.filter((item: any) => 
-                                        normalizeText(item.name).includes(normalizeText(adminSearchQuery))
-                                    );
+                                    let filteredItems: any[] = [];
+                                    category.items.forEach((item: any) => {
+                                        if (normalizeText(item.name).includes(normalizeText(adminSearchQuery))) {
+                                            filteredItems.push(item);
+                                        }
+                                        if (item.allowOneHalf) {
+                                            const halfName = item.name + ' (1.5 Porsiyon)';
+                                            if (normalizeText(halfName).includes(normalizeText(adminSearchQuery))) {
+                                                filteredItems.push({ ...item, name: halfName, price: (parseFloat(item.price || '0') * 1.5).toString() });
+                                            }
+                                        }
+                                    });
                                     if (filteredItems.length === 0) return null;
 
                                     return (
@@ -901,6 +945,83 @@ export default function Panel() {
             })()}
             
             <audio id="notificationSound" src="/notification.mp3" preload="auto"></audio>
+
+            {activeTab === 'feedbacks' && (() => {
+                const feedbacks: any[] = Array.isArray(adminData?.feedbacks) ? adminData.feedbacks : [];
+                const avgRating = feedbacks.length > 0 ? (feedbacks.reduce((s: number, f: any) => s + (f.rating || 0), 0) / feedbacks.length).toFixed(1) : null;
+                const ratingCounts = [5,4,3,2,1].map(r => ({ star: r, count: feedbacks.filter((f:any) => f.rating === r).length }));
+                return (
+                    <div className="space-y-4 animate-fade-in">
+                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i className="fa-solid fa-star text-yellow-400"></i> Müşteri Değerlendirmeleri
+                            </h2>
+                            {feedbacks.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <i className="fa-regular fa-star text-5xl text-gray-200 mb-3 block"></i>
+                                    <p className="text-gray-400 font-medium">Henüz değerlendirme yok.</p>
+                                    <p className="text-gray-300 text-sm mt-1">Masalar kapandıkça müşterilerden gelecek.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex flex-col sm:flex-row gap-6 mb-6 p-5 bg-yellow-50 border border-yellow-200 rounded-xl">
+                                        <div className="flex items-center gap-4 shrink-0">
+                                            <div className="text-6xl font-black text-yellow-500 leading-none">{avgRating}</div>
+                                            <div>
+                                                <div className="flex gap-1 mb-1">
+                                                    {[1,2,3,4,5].map(s => (
+                                                        <i key={s} className={`fa-solid fa-star text-xl ${parseFloat(avgRating!) >= s ? 'text-yellow-400' : 'text-gray-200'}`}></i>
+                                                    ))}
+                                                </div>
+                                                <p className="text-sm text-gray-500 font-medium">{feedbacks.length} değerlendirme</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 space-y-1.5">
+                                            {ratingCounts.map(({ star, count }) => (
+                                                <div key={star} className="flex items-center gap-2 text-sm">
+                                                    <span className="w-3 text-right text-gray-500 font-bold shrink-0">{star}</span>
+                                                    <i className="fa-solid fa-star text-yellow-400 text-xs shrink-0"></i>
+                                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                                        <div
+                                                            className="bg-yellow-400 h-2 rounded-full transition-all duration-500"
+                                                            style={{ width: feedbacks.length > 0 ? `${(count / feedbacks.length) * 100}%` : '0%' }}
+                                                        />
+                                                    </div>
+                                                    <span className="w-5 text-right text-gray-400 text-xs shrink-0">{count}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {feedbacks.map((f: any, i: number) => (
+                                            <div key={i} className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                            <div className="flex gap-0.5">
+                                                                {[1,2,3,4,5].map(s => (
+                                                                    <i key={s} className={`fa-solid fa-star text-sm ${f.rating >= s ? 'text-yellow-400' : 'text-gray-200'}`}></i>
+                                                                ))}
+                                                            </div>
+                                                            {f.tableId && <span className="text-xs font-bold bg-gray-200 px-2 py-0.5 rounded-full text-gray-600">Masa {f.tableId}</span>}
+                                                            <span className="text-xs text-gray-400 ml-auto">{new Date(f.timestamp).toLocaleString('tr-TR')}</span>
+                                                        </div>
+                                                        {f.comment
+                                                            ? <p className="text-sm text-gray-700">"{f.comment}"</p>
+                                                            : <p className="text-sm text-gray-300 italic">Yorum yapılmamış</p>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
+            </div>
             
             <style dangerouslySetInnerHTML={{__html: `
                 .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
