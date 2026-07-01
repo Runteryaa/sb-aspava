@@ -800,23 +800,24 @@ export default function Panel() {
                                                 <span className="font-black text-lg">Masa {order.tableId}</span>
                                                 <span className="text-sm text-gray-400">{new Date(order.timestamp).toLocaleTimeString('tr-TR')}</span>
                                             </div>
-                                            <ul className="mb-4 space-y-1">
+                                            <ul className="mb-3 space-y-1">
                                                 {order.items.map((item:any, idx:number) => (
                                                     <li key={idx} className="font-bold text-gray-700 flex justify-between">
                                                         <span>{item.qty}x {item.name}</span>
                                                         <span className="text-gray-500 font-normal text-sm">₺{((item.price || 0) * item.qty).toFixed(2)}</span>
                                                     </li>
                                                 ))}
-                                                {order.note && (
-                                                    <div className="mt-3 bg-yellow-50 border border-yellow-200 p-2 rounded text-sm text-yellow-800 font-medium leading-tight">
-                                                        <span className="font-black text-yellow-900">Not:</span> {order.note}
-                                                    </div>
-                                                )}
                                                 <div className="flex justify-between font-black text-lg pt-2 mt-2 border-t border-gray-200">
                                                     <span>Toplam:</span>
                                                     <span className="text-brand-red">₺{order.items.reduce((s:number, i:any) => s + (i.price || 0) * i.qty, 0).toFixed(2)}</span>
                                                 </div>
                                             </ul>
+                                            {order.note && (
+                                                <div className="mb-3 flex items-start gap-2 bg-yellow-50 border-l-4 border-yellow-400 px-3 py-2 rounded-r-lg">
+                                                    <i className="fa-solid fa-comment-dots text-yellow-500 mt-0.5 flex-shrink-0"></i>
+                                                    <span className="text-sm text-yellow-900 font-semibold leading-snug">{order.note}</span>
+                                                </div>
+                                            )}
                                             <div className="flex gap-2">
                                                 <button 
                                                     onClick={() => {
@@ -883,19 +884,26 @@ export default function Panel() {
                                                                     </span>
                                                                     <span className="text-gray-400">{new Date(order.timestamp).toLocaleTimeString('tr-TR')}</span>
                                                                 </div>
-                                                                <div className={order.status === 'iptal' ? 'opacity-50 line-through' : ''}>
-                                                                    {order.items.map((i:any, iIdx:number) => (
-                                                                        <div key={iIdx} className="font-medium text-sm text-gray-800 flex justify-between">
-                                                                            <span>• {i.qty}x {i.name}</span>
-                                                                            <span className="text-gray-500 font-normal text-xs">₺{((i.price || 0) * i.qty).toFixed(2)}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                    {order.note && (
-                                                                        <div className="mt-2 bg-yellow-50 border border-yellow-200 p-1.5 rounded text-xs text-yellow-800 font-medium leading-tight">
-                                                                            <span className="font-black text-yellow-900">Not:</span> {order.note}
-                                                                        </div>
-                                                                    )}
+                                                            <div className={order.status === 'iptal' ? 'opacity-50 line-through' : ''}>
+                                                                {order.items.map((i:any, iIdx:number) => (
+                                                                    <div key={iIdx} className="font-medium text-sm text-gray-800 flex justify-between">
+                                                                        <span>• {i.qty}x {i.name}</span>
+                                                                        <span className="text-gray-500 font-normal text-xs">₺{((i.price || 0) * i.qty).toFixed(2)}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            {order.note && order.status !== 'iptal' && (
+                                                                <div className="mt-1.5 mb-1 flex items-start gap-1.5 bg-yellow-50 border-l-4 border-yellow-400 px-2 py-1.5 rounded-r text-xs">
+                                                                    <i className="fa-solid fa-comment-dots text-yellow-500 mt-0.5 flex-shrink-0"></i>
+                                                                    <span className="text-yellow-900 font-semibold leading-snug">{order.note}</span>
                                                                 </div>
+                                                            )}
+                                                            {order.note && order.status === 'iptal' && (
+                                                                <div className="mt-1.5 mb-1 flex items-start gap-1.5 bg-gray-50 border-l-4 border-gray-300 px-2 py-1.5 rounded-r text-xs opacity-50">
+                                                                    <i className="fa-solid fa-comment-dots text-gray-400 mt-0.5 flex-shrink-0"></i>
+                                                                    <span className="text-gray-600 font-semibold line-through leading-snug">{order.note}</span>
+                                                                </div>
+                                                            )}
                                                                 {order.status !== 'iptal' && (
                                                                     <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
                                                                         {order.status === 'onaylandi' && (
