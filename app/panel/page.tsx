@@ -528,7 +528,11 @@ export default function Panel() {
         lines.push(BIG_ON + BOLD_ON + biz + BOLD_OFF + BIG_OFF + LF);
         lines.push(BOLD_ON + 'MASA ' + tableId + BOLD_OFF + LF);
         lines.push(timeStr + LF);
-        if (orderId !== 'MANUEL') lines.push('Siparis #' + orderId + LF);
+        if (orderId === 'ADİSYON') {
+            lines.push(BOLD_ON + '--- GENEL ADISYON ---' + BOLD_OFF + LF);
+        } else if (orderId !== 'MANUEL') {
+            lines.push('Siparis #' + orderId + LF);
+        }
         lines.push(LEFT);
         lines.push(SEP);
         items.forEach((item: any) => {
@@ -1022,7 +1026,34 @@ export default function Panel() {
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="text-xl font-black">Masa {tableId}</h3>
                                                 {isActive ? (
-                                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Dolu</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Dolu</span>
+                                                        <button
+                                                            onClick={() => {
+                                                                const allItems: any[] = [];
+                                                                const allNotes: string[] = [];
+                                                                table.orders.forEach((o: any) => {
+                                                                    if (o.status !== 'iptal') {
+                                                                        if (o.items && Array.isArray(o.items)) {
+                                                                            o.items.forEach((item: any) => allItems.push(item));
+                                                                        }
+                                                                        if (o.note && o.note.trim()) {
+                                                                            allNotes.push(o.note.trim());
+                                                                        }
+                                                                    }
+                                                                });
+                                                                if (allItems.length === 0) {
+                                                                    alert('Bu masada yazdırılacak aktif ürün yok!');
+                                                                    return;
+                                                                }
+                                                                printWithQZTray(tableId, allItems, 'ADİSYON', allNotes.join(' | '));
+                                                            }}
+                                                            title="Tüm Adisyonu Yazdır"
+                                                            className="bg-gray-800 hover:bg-gray-900 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-colors"
+                                                        >
+                                                            Y
+                                                        </button>
+                                                    </div>
                                                 ) : (
                                                     <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm font-bold">Boş</span>
                                                 )}
