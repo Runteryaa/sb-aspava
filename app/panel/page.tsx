@@ -39,6 +39,7 @@ export default function Panel() {
 
     // QZ Tray states
     const [qzStatus, setQzStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+    const [qzErrorMsg, setQzErrorMsg] = useState<string>('');
     const [qzPrinters, setQzPrinters] = useState<string[]>([]);
     const [selectedPrinter, setSelectedPrinter] = useState<string>('');
     const [businessName, setBusinessName] = useState<string>('SB Aspava');
@@ -161,17 +162,40 @@ export default function Panel() {
     // QZ Tray: Load script and auto-connect
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        // Load saved values from localStorage (safe - only runs client-side)
         const savedPrinter = localStorage.getItem('qz_printer');
         const savedBusiness = localStorage.getItem('qz_business');
         if (savedPrinter) setSelectedPrinter(savedPrinter);
         if (savedBusiness) setBusinessName(savedBusiness);
-        // Load QZ Tray script
-        if ((window as any).qz) { qzRef.current = (window as any).qz; return; }
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js';
-        script.onload = () => { qzRef.current = (window as any).qz; };
-        document.head.appendChild(script);
+        if (!(window as any).qz) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js';
+            script.onload = () => { qzRef.current = (window as any).qz; };
+            document.head.appendChild(script);
+        } else {
+            qzRef.current = (window as any).qz;
+        }
+
+        // QZ Tray arka planda bağlandığında arayüzü otomatik yeşile çeviren kontrol
+        const interval = setInterval(() => {
+            const qz = qzRef.current || (window as any).qz;
+            if (qz && qz.websocket && qz.websocket.isActive()) {
+                setQzStatus(prev => {
+                    if (prev !== 'connected') {
+                        qz.printers.find().then((res: any) => {
+                            const list: string[] = Array.isArray(res) ? res : (res ? [res] : []);
+                            setQzPrinters(list);
+                            if (list.length > 0 && !localStorage.getItem('qz_printer')) {
+                                setSelectedPrinter(list[0]);
+                                localStorage.setItem('qz_printer', list[0]);
+                            }
+                        }).catch(() => {});
+                        return 'connected';
+                    }
+                    return prev;
+                });
+            }
+        }, 1500);
+        return () => clearInterval(interval);
     }, []);
 
     const fetchPrinters = async (qz: any) => {
@@ -196,20 +220,23 @@ export default function Panel() {
         if (!qz) { alert('QZ Tray kütüphanesi henüz yüklenmedi. Lütfen birkaç saniye bekleyin.'); return; }
         if (qz.websocket.isActive()) { setQzStatus('connected'); await fetchPrinters(qz); return; }
         setQzStatus('connecting');
+        setQzErrorMsg('');
         try {
-            qz.security.setCertificatePromise(() => Promise.resolve(''));
+            qz.security.setCertificatePromise((resolve: any) => resolve());
             qz.security.setSignatureAlgorithm('SHA512');
-            qz.security.setSignaturePromise(() => Promise.resolve(''));
+            qz.security.setSignaturePromise((resolve: any) => resolve());
             await qz.websocket.connect({ retries: 1, delay: 0.5 });
             setQzStatus('connected');
             await fetchPrinters(qz);
         } catch (e: any) {
-            if (qz.websocket.isActive() || (e && e.toString().includes('already exists'))) {
+            const errStr = e?.message || e?.toString() || 'Bilinmeyen bağlantı hatası';
+            if (qz.websocket.isActive() || errStr.includes('already exists') || errStr.includes('already connected')) {
                 setQzStatus('connected');
                 await fetchPrinters(qz);
             } else {
                 console.error('QZ Tray bağlantı hatası:', e);
                 setQzStatus('error');
+                setQzErrorMsg(errStr);
             }
         }
     };
@@ -651,7 +678,12 @@ export default function Panel() {
                                             Bağlantıyı Kes
                                         </button>
                                     )}
-                                </div>
+                                    {qzStatus === 'error' && qzErrorMsg && (
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 text-xs text-red-800 mt-3">
+                                        <b>Hata Detayı:</b> {qzErrorMsg}
+                                    </div>
+                                )}
+                            </div>
                                 {qzStatus === 'connecting' && (
                                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5 text-xs text-yellow-800 mt-3 flex items-start gap-2">
                                         <i className="fa-solid fa-bell text-yellow-600 mt-0.5 flex-shrink-0"></i>
