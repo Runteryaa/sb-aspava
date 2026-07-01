@@ -58,13 +58,15 @@ export async function POST(request: Request) {
                 if (db.tables[toTableId].sessionId) {
                     return NextResponse.json({ error: 'Hedef masa şu anda dolu! Önce hedef masayı kapatın.' }, { status: 400 });
                 }
-                // Copy session and orders
+                // Copy session, orders and lastActivity
                 db.tables[toTableId].sessionId = db.tables[fromTableId].sessionId;
-                db.tables[toTableId].orders = db.tables[fromTableId].orders;
+                db.tables[toTableId].orders = [...db.tables[fromTableId].orders];
+                db.tables[toTableId].lastActivity = Date.now();
                 
                 // Clear old table
                 db.tables[fromTableId].sessionId = null;
                 db.tables[fromTableId].orders = [];
+                db.tables[fromTableId].lastActivity = null;
                 
                 // Update pending orders tableId
                 db.pendingOrders = db.pendingOrders.map((o: any) => {
