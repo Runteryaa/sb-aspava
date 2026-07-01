@@ -176,7 +176,7 @@ export default function Panel() {
 
     const fetchPrinters = async (qz: any) => {
         try {
-            const result = await qz.printers.find('');
+            const result = await qz.printers.find();
             // QZ Tray bazen string, bazen array döner
             const list: string[] = Array.isArray(result) ? result : (result ? [result] : []);
             setQzPrinters(list);
@@ -200,12 +200,17 @@ export default function Panel() {
             qz.security.setCertificatePromise(() => Promise.resolve(''));
             qz.security.setSignatureAlgorithm('SHA512');
             qz.security.setSignaturePromise(() => Promise.resolve(''));
-            await qz.websocket.connect();
+            await qz.websocket.connect({ retries: 1, delay: 0.5 });
             setQzStatus('connected');
             await fetchPrinters(qz);
         } catch (e: any) {
-            console.error('QZ Tray bağlantı hatası:', e);
-            setQzStatus('error');
+            if (qz.websocket.isActive() || (e && e.toString().includes('already exists'))) {
+                setQzStatus('connected');
+                await fetchPrinters(qz);
+            } else {
+                console.error('QZ Tray bağlantı hatası:', e);
+                setQzStatus('error');
+            }
         }
     };
 
@@ -405,7 +410,14 @@ export default function Panel() {
             return;
         }
         const printer = selectedPrinter || localStorage.getItem('qz_printer') || '';
-        if (!printer) { alert('Lütfen Ayarlar > QZ Tray bölümünden bir yazıcı seçin.'); return; }
+        if (!printer) {
+            if (orderId === 'TEST' || orderId === 'MANUEL') {
+                alert('Lütfen Ayarlar > QZ Tray bölümünden bir yazıcı seçin veya elle girin.');
+            } else {
+                console.warn('Yazıcı seçilmediği için arka planda otomatik yazdırma atlandı.');
+            }
+            return;
+        }
 
         const ESC = '\x1B';
         const GS  = '\x1D';
@@ -607,36 +619,46 @@ export default function Panel() {
                             <p className="text-sm text-gray-500 mb-5">Termal fiş yazıcınızla doğrudan bağlantı kurar. QZ Tray uygulamasının bilgisayarda yüklü ve çalışıyor olması gerekir.</p>
 
                             {/* Baglanma Durumu */}
-                            <div className="flex items-center gap-3 mb-5">
-                                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                                    qzStatus === 'connected' ? 'bg-green-500 animate-pulse' :
-                                    qzStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' :
-                                    qzStatus === 'error' ? 'bg-red-500' : 'bg-gray-300'
-                                }`}></div>
-                                <span className={`font-bold text-sm ${
-                                    qzStatus === 'connected' ? 'text-green-600' :
-                                    qzStatus === 'connecting' ? 'text-yellow-600' :
-                                    qzStatus === 'error' ? 'text-red-600' : 'text-gray-500'
-                                }`}>
-                                    {qzStatus === 'connected' ? 'Bağlandı ✓' :
-                                     qzStatus === 'connecting' ? 'Bağlanıyor...' :
-                                     qzStatus === 'error' ? 'Bağlantı Hatası — QZ Tray açık mı?' : 'Bağlı Değil'}
-                                </span>
-                                {qzStatus !== 'connected' && qzStatus !== 'connecting' && (
-                                    <button
-                                        onClick={connectQZ}
-                                        className="ml-auto bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-1.5 rounded-lg transition-colors"
-                                    >
-                                        <i className="fa-solid fa-plug mr-1"></i> Bağlan
-                                    </button>
-                                )}
-                                {qzStatus === 'connected' && (
-                                    <button
-                                        onClick={disconnectQZ}
-                                        className="ml-auto bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-bold px-4 py-1.5 rounded-lg transition-colors"
-                                    >
-                                        Bağlantıyı Kes
-                                    </button>
+                            <div className="flex flex-col mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                        qzStatus === 'connected' ? 'bg-green-500 animate-pulse' :
+                                        qzStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' :
+                                        qzStatus === 'error' ? 'bg-red-500' : 'bg-gray-300'
+                                    }`}></div>
+                                    <span className={`font-bold text-sm ${
+                                        qzStatus === 'connected' ? 'text-green-600' :
+                                        qzStatus === 'connecting' ? 'text-yellow-600' :
+                                        qzStatus === 'error' ? 'text-red-600' : 'text-gray-500'
+                                    }`}>
+                                        {qzStatus === 'connected' ? 'Bağlandı ✓' :
+                                         qzStatus === 'connecting' ? 'Bağlanıyor...' :
+                                         qzStatus === 'error' ? 'Bağlantı Hatası — QZ Tray açık mı?' : 'Bağlı Değil'}
+                                    </span>
+                                    {qzStatus !== 'connected' && qzStatus !== 'connecting' && (
+                                        <button
+                                            onClick={connectQZ}
+                                            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-1.5 rounded-lg transition-colors"
+                                        >
+                                            <i className="fa-solid fa-plug mr-1"></i> Bağlan
+                                        </button>
+                                    )}
+                                    {qzStatus === 'connected' && (
+                                        <button
+                                            onClick={disconnectQZ}
+                                            className="ml-auto bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-bold px-4 py-1.5 rounded-lg transition-colors"
+                                        >
+                                            Bağlantıyı Kes
+                                        </button>
+                                    )}
+                                </div>
+                                {qzStatus === 'connecting' && (
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5 text-xs text-yellow-800 mt-3 flex items-start gap-2">
+                                        <i className="fa-solid fa-bell text-yellow-600 mt-0.5 flex-shrink-0"></i>
+                                        <span>
+                                            <b>Önemli:</b> Windows görev çubuğunda (ekranın alt kısmında veya arka planda) QZ Tray'in güvenlik/onay penceresi açılmış olabilir. Lütfen yanıp sönen QZ Tray simgesine tıklayıp <b>"Allow" (İzin Ver)</b> butonuna basın.
+                                        </span>
+                                    </div>
                                 )}
                             </div>
 
