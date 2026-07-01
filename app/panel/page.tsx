@@ -37,6 +37,13 @@ export default function Panel() {
     const initialLoadRef = useRef(true);
     const prevOrdersRef = useRef<Set<string>>(new Set());
 
+    // QZ Tray states
+    const [qzStatus, setQzStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+    const [qzPrinters, setQzPrinters] = useState<string[]>([]);
+    const [selectedPrinter, setSelectedPrinter] = useState<string>(() => localStorage.getItem('qz_printer') || '');
+    const [businessName, setBusinessName] = useState<string>(() => localStorage.getItem('qz_business') || 'SB Aspava');
+    const qzRef = useRef<any>(null);
+
     const unlockAudio = () => {
         setAudioEnabled(true);
         if (audioUnlockedRef.current) return;
@@ -86,11 +93,7 @@ export default function Panel() {
                     // Otomatik onay açıksa yazdır
                     if (adminData.settings?.autoApprove) {
                         newOrders.forEach(order => {
-                            fetch('http://localhost:8181/print', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ tableId: order.tableId, items: order.items, orderId: order.id })
-                            }).catch(() => {});
+                            printWithQZTray(order.tableId, order.items, order.id, order.note);
                         });
                     }
                 }
@@ -153,6 +156,46 @@ export default function Panel() {
         fetch('/api/admin')
             .then(res => res.json())
             .then(data => setAdminData(data));
+    };
+
+    // QZ Tray: Load script and auto-connect
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if ((window as any).qz) { qzRef.current = (window as any).qz; return; }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js';
+        script.onload = () => { qzRef.current = (window as any).qz; };
+        document.head.appendChild(script);
+    }, []);
+
+    const connectQZ = async () => {
+        const qz = qzRef.current || (window as any).qz;
+        if (!qz) { alert('QZ Tray kütüphanesi henüz yüklenmedi. Lütfen birkaç saniye bekleyin.'); return; }
+        if (qz.websocket.isActive()) { setQzStatus('connected'); return; }
+        setQzStatus('connecting');
+        try {
+            qz.security.setCertificatePromise(() => Promise.resolve(''));
+            qz.security.setSignatureAlgorithm('SHA512');
+            qz.security.setSignaturePromise(() => Promise.resolve(''));
+            await qz.websocket.connect();
+            setQzStatus('connected');
+            const printers: string[] = await qz.printers.find();
+            setQzPrinters(printers);
+            if (!selectedPrinter && printers.length > 0) {
+                setSelectedPrinter(printers[0]);
+                localStorage.setItem('qz_printer', printers[0]);
+            }
+        } catch (e: any) {
+            console.error('QZ Tray bağlantı hatası:', e);
+            setQzStatus('error');
+        }
+    };
+
+    const disconnectQZ = async () => {
+        const qz = qzRef.current || (window as any).qz;
+        if (!qz) return;
+        try { await qz.websocket.disconnect(); } catch {}
+        setQzStatus('disconnected');
     };
 
     useEffect(() => {
@@ -336,16 +379,66 @@ export default function Panel() {
         fetchAdminData();
     };
 
-    const printToLocalServer = async (tableId: string, items: any, orderId: string) => {
-        try {
-            await fetch('http://localhost:8181/print', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tableId, items, orderId })
-            });
-        } catch (e) {
-            console.error("Lokal yazdırma sunucusuna ulaşılamadı. Sunucunun açık olduğundan emin olun.");
+    const printWithQZTray = async (tableId: string, items: any, orderId: string, note?: string) => {
+        const qz = qzRef.current || (window as any).qz;
+        if (!qz) { console.error('QZ Tray yüklü değil.'); return; }
+        if (!qz.websocket.isActive()) {
+            console.warn('QZ Tray bağlı değil, yazdırma atlandı.');
+            return;
         }
+        const printer = selectedPrinter || localStorage.getItem('qz_printer') || '';
+        if (!printer) { alert('Lütfen Ayarlar > QZ Tray bölümünden bir yazıcı seçin.'); return; }
+
+        const ESC = '\x1B';
+        const GS  = '\x1D';
+        const LF  = '\n';
+        const BOLD_ON  = ESC + 'E\x01';
+        const BOLD_OFF = ESC + 'E\x00';
+        const BIG_ON   = GS  + '!\x11'; // double width + height
+        const BIG_OFF  = GS  + '!\x00';
+        const CENTER   = ESC + 'a\x01';
+        const LEFT     = ESC + 'a\x00';
+        const CUT      = GS  + 'V\x42\x00';
+        const SEP      = '-'.repeat(42) + LF;
+
+        const biz = businessName || localStorage.getItem('qz_business') || 'SB Aspava';
+        const now = new Date();
+        const timeStr = now.toLocaleString('tr-TR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        const total = items.reduce((s: number, i: any) => s + (i.price || 0) * i.qty, 0);
+
+        let lines: string[] = [];
+        lines.push(CENTER);
+        lines.push(BIG_ON + BOLD_ON + biz + BOLD_OFF + BIG_OFF + LF);
+        lines.push(BOLD_ON + 'MASA ' + tableId + BOLD_OFF + LF);
+        lines.push(timeStr + LF);
+        if (orderId !== 'MANUEL') lines.push('Siparis #' + orderId + LF);
+        lines.push(LEFT);
+        lines.push(SEP);
+        items.forEach((item: any) => {
+            const itemTotal = ((item.price || 0) * item.qty).toFixed(2);
+            const left = `${item.qty}x ${item.name}`;
+            const right = `${itemTotal} TL`;
+            const pad = Math.max(1, 42 - left.length - right.length);
+            lines.push(left + ' '.repeat(pad) + right + LF);
+        });
+        lines.push(SEP);
+        lines.push(CENTER + BOLD_ON + `TOPLAM: ${total.toFixed(2)} TL` + BOLD_OFF + LF);
+        if (note) lines.push(LEFT + 'Not: ' + note + LF);
+        lines.push(LF + LF);
+        lines.push(CUT);
+
+        const config = qz.configs.create(printer);
+        const data = [{ type: 'raw', format: 'plain', data: lines.join('') }];
+        try {
+            await qz.print(config, data);
+        } catch (e) {
+            console.error('QZ Tray yazdırma hatası:', e);
+        }
+    };
+
+    // Eski lokal sunucu fonksiyonunu koru (artık kullanılmıyor ama referans için)
+    const printToLocalServer = async (tableId: string, items: any, orderId: string) => {
+        await printWithQZTray(tableId, items, orderId);
     };
 
     if (isAuthenticated === null) return <div className="p-10 text-center text-xl">Kontrol ediliyor...</div>;
@@ -478,6 +571,111 @@ export default function Panel() {
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-800"></div>
                                     </label>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* QZ Tray Yazici Ayarlari */}
+                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                                <i className="fa-solid fa-print"></i> QZ Tray Yazıcı Ayarları
+                            </h2>
+                            <p className="text-sm text-gray-500 mb-5">Termal fiş yazıcınızla doğrudan bağlantı kurar. QZ Tray uygulamasının bilgisayarda yüklü ve çalışıyor olması gerekir.</p>
+
+                            {/* Baglanma Durumu */}
+                            <div className="flex items-center gap-3 mb-5">
+                                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                    qzStatus === 'connected' ? 'bg-green-500 animate-pulse' :
+                                    qzStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' :
+                                    qzStatus === 'error' ? 'bg-red-500' : 'bg-gray-300'
+                                }`}></div>
+                                <span className={`font-bold text-sm ${
+                                    qzStatus === 'connected' ? 'text-green-600' :
+                                    qzStatus === 'connecting' ? 'text-yellow-600' :
+                                    qzStatus === 'error' ? 'text-red-600' : 'text-gray-500'
+                                }`}>
+                                    {qzStatus === 'connected' ? 'Bağlandı ✓' :
+                                     qzStatus === 'connecting' ? 'Bağlanıyor...' :
+                                     qzStatus === 'error' ? 'Bağlantı Hatası — QZ Tray açık mı?' : 'Bağlı Değil'}
+                                </span>
+                                {qzStatus !== 'connected' && qzStatus !== 'connecting' && (
+                                    <button
+                                        onClick={connectQZ}
+                                        className="ml-auto bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-1.5 rounded-lg transition-colors"
+                                    >
+                                        <i className="fa-solid fa-plug mr-1"></i> Bağlan
+                                    </button>
+                                )}
+                                {qzStatus === 'connected' && (
+                                    <button
+                                        onClick={disconnectQZ}
+                                        className="ml-auto bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-bold px-4 py-1.5 rounded-lg transition-colors"
+                                    >
+                                        Bağlantıyı Kes
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col gap-4">
+                                {/* İşletme Adı */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-bold text-gray-700">İşletme Adı (Fiş başlığı)</label>
+                                    <input
+                                        type="text"
+                                        value={businessName}
+                                        onChange={(e) => {
+                                            setBusinessName(e.target.value);
+                                            localStorage.setItem('qz_business', e.target.value);
+                                        }}
+                                        placeholder="SB Aspava"
+                                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-red"
+                                    />
+                                </div>
+
+                                {/* Yazıcı Seçimi */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-bold text-gray-700">Yazıcı</label>
+                                    {qzStatus === 'connected' && qzPrinters.length > 0 ? (
+                                        <select
+                                            value={selectedPrinter}
+                                            onChange={(e) => {
+                                                setSelectedPrinter(e.target.value);
+                                                localStorage.setItem('qz_printer', e.target.value);
+                                            }}
+                                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-red"
+                                        >
+                                            {qzPrinters.map(p => (
+                                                <option key={p} value={p}>{p}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={selectedPrinter}
+                                            onChange={(e) => {
+                                                setSelectedPrinter(e.target.value);
+                                                localStorage.setItem('qz_printer', e.target.value);
+                                            }}
+                                            placeholder="Yazıcı adını girin veya QZ Tray'e bağlanın"
+                                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-red"
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Test Fişi */}
+                                <div className="flex gap-3 mt-2">
+                                    <button
+                                        onClick={() => printWithQZTray('TEST', [{name: 'Test Ürünü', price: 25, qty: 2}], 'TEST', 'QZ Tray test fişi')}
+                                        disabled={qzStatus !== 'connected' || !selectedPrinter}
+                                        className="bg-gray-800 hover:bg-gray-900 text-white text-sm font-bold px-5 py-2 rounded-lg transition-colors disabled:opacity-40 flex items-center gap-2"
+                                    >
+                                        <i className="fa-solid fa-receipt"></i> Test Fişi Yazdır
+                                    </button>
+                                </div>
+                                {qzStatus !== 'connected' && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                                        <b>QZ Tray kurulu değil mi?</b> <a href="https://qz.io/download/" target="_blank" rel="noreferrer" className="underline font-bold">qz.io/download</a> adresinden indirip kurun.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -623,7 +821,7 @@ export default function Panel() {
                                                 <button 
                                                     onClick={() => {
                                                         handleAction('approve_order', { orderId: order.id });
-                                                        printToLocalServer(order.tableId, order.items, order.id);
+                                                        printWithQZTray(order.tableId, order.items, order.id, order.note);
                                                     }} 
                                                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold"
                                                 >
