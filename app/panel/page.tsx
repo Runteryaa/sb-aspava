@@ -200,6 +200,7 @@ export default function Panel() {
 
     const fetchPrinters = async (qz: any) => {
         try {
+            setQzErrorMsg('');
             const result = await qz.printers.find();
             // QZ Tray bazen string, bazen array döner
             const list: string[] = Array.isArray(result) ? result : (result ? [result] : []);
@@ -210,8 +211,10 @@ export default function Panel() {
                 setSelectedPrinter(match);
                 localStorage.setItem('qz_printer', match);
             }
-        } catch (e) {
+        } catch (e: any) {
+            const errStr = e?.message || e?.toString() || 'Yazıcı listesi alınamadı';
             console.error('Yazıcı listesi alınamadı:', e);
+            setQzErrorMsg('Yazıcı listesi hatası: ' + errStr);
         }
     };
 
@@ -495,8 +498,17 @@ export default function Panel() {
         const data = [{ type: 'raw', format: 'plain', data: lines.join('') }];
         try {
             await qz.print(config, data);
-        } catch (e) {
+            if (orderId === 'TEST' || orderId === 'MANUEL') {
+                alert(`✅ Fiş başarıyla yazıcıya (${printer}) gönderildi!`);
+            }
+        } catch (e: any) {
+            const errStr = e?.message || e?.toString() || 'Bilinmeyen yazdırma hatası';
             console.error('QZ Tray yazdırma hatası:', e);
+            setQzErrorMsg(`Yazdırma Hatası (${printer}): ${errStr}`);
+            setQzStatus('error');
+            if (orderId === 'TEST' || orderId === 'MANUEL') {
+                alert(`❌ Yazdırma Hatası: ${errStr}`);
+            }
         }
     };
 
