@@ -174,10 +174,27 @@ export default function Panel() {
         document.head.appendChild(script);
     }, []);
 
+    const fetchPrinters = async (qz: any) => {
+        try {
+            const result = await qz.printers.find('');
+            // QZ Tray bazen string, bazen array döner
+            const list: string[] = Array.isArray(result) ? result : (result ? [result] : []);
+            setQzPrinters(list);
+            if (list.length > 0) {
+                const saved = localStorage.getItem('qz_printer');
+                const match = saved && list.includes(saved) ? saved : list[0];
+                setSelectedPrinter(match);
+                localStorage.setItem('qz_printer', match);
+            }
+        } catch (e) {
+            console.error('Yazıcı listesi alınamadı:', e);
+        }
+    };
+
     const connectQZ = async () => {
         const qz = qzRef.current || (window as any).qz;
         if (!qz) { alert('QZ Tray kütüphanesi henüz yüklenmedi. Lütfen birkaç saniye bekleyin.'); return; }
-        if (qz.websocket.isActive()) { setQzStatus('connected'); return; }
+        if (qz.websocket.isActive()) { setQzStatus('connected'); await fetchPrinters(qz); return; }
         setQzStatus('connecting');
         try {
             qz.security.setCertificatePromise(() => Promise.resolve(''));
@@ -185,12 +202,7 @@ export default function Panel() {
             qz.security.setSignaturePromise(() => Promise.resolve(''));
             await qz.websocket.connect();
             setQzStatus('connected');
-            const printers: string[] = await qz.printers.find();
-            setQzPrinters(printers);
-            if (!selectedPrinter && printers.length > 0) {
-                setSelectedPrinter(printers[0]);
-                localStorage.setItem('qz_printer', printers[0]);
-            }
+            await fetchPrinters(qz);
         } catch (e: any) {
             console.error('QZ Tray bağlantı hatası:', e);
             setQzStatus('error');
@@ -645,8 +657,18 @@ export default function Panel() {
                                 </div>
 
                                 {/* Yazıcı Seçimi */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-bold text-gray-700">Yazıcı</label>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-bold text-gray-700">Yazıcı</label>
+                                        {qzStatus === 'connected' && (
+                                            <button
+                                                onClick={() => fetchPrinters(qzRef.current || (window as any).qz)}
+                                                className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1"
+                                            >
+                                                <i className="fa-solid fa-rotate-right text-xs"></i> Listeyi Yenile
+                                            </button>
+                                        )}
+                                    </div>
                                     {qzStatus === 'connected' && qzPrinters.length > 0 ? (
                                         <select
                                             value={selectedPrinter}
@@ -668,9 +690,15 @@ export default function Panel() {
                                                 setSelectedPrinter(e.target.value);
                                                 localStorage.setItem('qz_printer', e.target.value);
                                             }}
-                                            placeholder="Yazıcı adını girin veya QZ Tray'e bağlanın"
+                                            placeholder={qzStatus === 'connected' ? 'Yazıcı adını elle girin (örn: Microsoft Print to PDF)' : 'Önce QZ Tray\'e bağlanın'}
                                             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-red"
                                         />
+                                    )}
+                                    {qzStatus === 'connected' && qzPrinters.length === 0 && (
+                                        <p className="text-xs text-orange-600 font-medium">
+                                            <i className="fa-solid fa-triangle-exclamation mr-1"></i>
+                                            Yazıcı listesi alınamadı. "Listeyi Yenile"ye basın veya yazıcı adını elle girin.
+                                        </p>
                                     )}
                                 </div>
 
