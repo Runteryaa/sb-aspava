@@ -181,6 +181,11 @@ export default function Panel() {
             if (qz && qz.websocket && qz.websocket.isActive()) {
                 setQzStatus(prev => {
                     if (prev !== 'connected') {
+                        try {
+                            qz.security.setCertificatePromise((resolve: any, reject: any) => resolve());
+                            qz.security.setSignatureAlgorithm('SHA512');
+                            qz.security.setSignaturePromise((toSign: any) => (resolve: any, reject: any) => resolve());
+                        } catch (err) {}
                         qz.printers.find().then((res: any) => {
                             const list: string[] = Array.isArray(res) ? res : (res ? [res] : []);
                             setQzPrinters(list);
@@ -201,6 +206,11 @@ export default function Panel() {
     const fetchPrinters = async (qz: any) => {
         try {
             setQzErrorMsg('');
+            if (qz && qz.security) {
+                qz.security.setCertificatePromise((resolve: any, reject: any) => resolve());
+                qz.security.setSignatureAlgorithm('SHA512');
+                qz.security.setSignaturePromise((toSign: any) => (resolve: any, reject: any) => resolve());
+            }
             const result = await qz.printers.find();
             // QZ Tray bazen string, bazen array döner
             const list: string[] = Array.isArray(result) ? result : (result ? [result] : []);
@@ -225,9 +235,9 @@ export default function Panel() {
         setQzStatus('connecting');
         setQzErrorMsg('');
         try {
-            qz.security.setCertificatePromise((resolve: any) => resolve());
+            qz.security.setCertificatePromise((resolve: any, reject: any) => resolve());
             qz.security.setSignatureAlgorithm('SHA512');
-            qz.security.setSignaturePromise((resolve: any) => resolve());
+            qz.security.setSignaturePromise((toSign: any) => (resolve: any, reject: any) => resolve());
             await qz.websocket.connect({ retries: 1, delay: 0.5 });
             setQzStatus('connected');
             await fetchPrinters(qz);
@@ -497,6 +507,11 @@ export default function Panel() {
         const config = qz.configs.create(printer);
         const data = [{ type: 'raw', format: 'plain', data: lines.join('') }];
         try {
+            if (qz && qz.security) {
+                qz.security.setCertificatePromise((resolve: any, reject: any) => resolve());
+                qz.security.setSignatureAlgorithm('SHA512');
+                qz.security.setSignaturePromise((toSign: any) => (resolve: any, reject: any) => resolve());
+            }
             await qz.print(config, data);
             if (orderId === 'TEST' || orderId === 'MANUEL') {
                 alert(`✅ Fiş başarıyla yazıcıya (${printer}) gönderildi!`);
