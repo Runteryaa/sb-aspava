@@ -269,8 +269,9 @@ export default function QRMenu() {
             }
         } catch (e) {
             alert("Bağlantı hatası.");
+        } finally {
+            setOrdering(false);
         }
-        setOrdering(false);
     };
 
     const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);

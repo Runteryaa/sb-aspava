@@ -49,8 +49,11 @@ export async function POST(request: Request) {
                 db.tables[tableId].lastActivity = Date.now();
             }
         } else if (action === 'close_table' && tableId) {
-            db.tables[tableId].sessionId = null;
-            db.tables[tableId].orders = [];
+            if (db.tables[tableId]) {
+                db.tables[tableId].sessionId = null;
+                db.tables[tableId].orders = [];
+                db.tables[tableId].lastActivity = null;
+            }
             // Remove pending orders for this table
             db.pendingOrders = db.pendingOrders.filter((o: any) => o.tableId !== tableId);
         } else if (action === 'move_table' && fromTableId && toTableId) {

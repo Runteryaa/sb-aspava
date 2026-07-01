@@ -5,7 +5,9 @@ import { redis } from '@/lib/redis';
 export async function POST(request: Request) {
     try {
         const { rating, comment, tableId } = await request.json();
-        if (!rating) return NextResponse.json({ error: 'Rating required' }, { status: 400 });
+        if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+            return NextResponse.json({ error: 'Geçerli bir puan gerekli (1-5)' }, { status: 400 });
+        }
 
         const rawLog: any = await redis.get('aspava:feedbacks');
         const feedbacks: any[] = Array.isArray(rawLog) ? rawLog : [];

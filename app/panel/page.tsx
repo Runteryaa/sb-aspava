@@ -98,13 +98,9 @@ export default function Panel() {
                         }
                     }
 
-                    // Otomatik onay açıksa yazdır (Sadece müşteriden gelen QR siparişlerini yazdır, admin'in manuel eklediklerini çift yazdırmasın)
+                    // Otomatik onay açıksa (Yazdırma iptal edildi, sadece durum güncellenir)
                     if (adminData.settings?.autoApprove) {
-                        newOrders.forEach(order => {
-                            if (!order.isManual && order.source !== 'admin') {
-                                printWithQZTray(order.tableId, order.items, order.id, order.note);
-                            }
-                        });
+                        // Sadece siparişi işaretle, yazdırma işlemi manuel yapılacak
                     }
                 }
             } else {
@@ -155,17 +151,27 @@ export default function Panel() {
 
     const fetchMenu = () => {
         fetch('/api/menu')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) return;
+                return res.json();
+            })
             .then(data => {
-                setMenuData(data);
-                setMenuLoading(false);
-            });
+                if (data) {
+                    setMenuData(data);
+                    setMenuLoading(false);
+                }
+            })
+            .catch(() => setMenuLoading(false));
     };
 
     const fetchAdminData = () => {
         fetch('/api/admin')
-            .then(res => res.json())
-            .then(data => setAdminData(data));
+            .then(res => {
+                if (!res.ok) return;
+                return res.json();
+            })
+            .then(data => { if (data) setAdminData(data); })
+            .catch(() => {});
     };
 
     // QZ Tray: Load script and auto-connect
@@ -510,14 +516,18 @@ export default function Panel() {
     };
 
     const handleAction = async (action: string, data: any) => {
-        const res = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, ...data })
-        });
-        const json = await res.json();
-        if (json.error) {
-            alert(json.error);
+        try {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...data })
+            });
+            const json = await res.json();
+            if (json.error) {
+                alert(json.error);
+            }
+        } catch (e) {
+            console.error('handleAction error:', e);
         }
         fetchAdminData();
     };
@@ -593,9 +603,20 @@ export default function Panel() {
         const CENTER   = ESC + 'a\x01';
         const LEFT     = ESC + 'a\x00';
         const CUT      = GS  + 'V\x42\x00';
-        const SEP      = '-'.repeat(42) + LF;
+        const LINE_WIDTH = 32; // 58mm yazıcılar için güvenli genişlik
+        const SEP      = '-'.repeat(LINE_WIDTH) + LF;
 
-        const biz = businessName || localStorage.getItem('qz_business') || 'SB Aspava';
+        const normalizeForPrinter = (text: string) => {
+            return text
+                .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+                .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+                .replace(/ş/g, 's').replace(/Ş/g, 'S')
+                .replace(/ı/g, 'i').replace(/İ/g, 'I')
+                .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+                .replace(/ç/g, 'c').replace(/Ç/g, 'C');
+        };
+
+        const biz = normalizeForPrinter(businessName || localStorage.getItem('qz_business') || 'SB Aspava');
         const now = new Date();
         const timeStr = now.toLocaleString('tr-TR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
         const total = items.reduce((s: number, i: any) => s + (i.price || 0) * i.qty, 0);
@@ -610,22 +631,23 @@ export default function Panel() {
         } else if (orderId !== 'MANUEL') {
             lines.push('Siparis #' + orderId + LF);
         }
-        lines.push(LEFT);
+        lines.push(CENTER);
         lines.push(SEP);
         items.forEach((item: any) => {
+            const itemName = normalizeForPrinter(item.name);
             const itemTotal = ((item.price || 0) * item.qty).toFixed(2);
-            const left = `${item.qty}x ${item.name}`;
-            const right = `${itemTotal} TL`;
-            const pad = Math.max(1, 42 - left.length - right.length);
-            lines.push(left + ' '.repeat(pad) + right + LF);
+            lines.push(`${item.qty}x ${itemName} = ${itemTotal} TL` + LF);
+            
             // Ürüne ait not varsa hemen altına yaz
             if (item.note && item.note.trim()) {
-                lines.push('  >> ' + item.note.trim() + LF);
+                const itemNote = normalizeForPrinter(item.note.trim());
+                lines.push(`(${itemNote})` + LF);
             }
         });
         if (note) {
+            const generalNote = normalizeForPrinter(note);
             lines.push(LF);
-            lines.push(BOLD_ON + 'GENEL NOT: ' + BOLD_OFF + note + LF);
+            lines.push(BOLD_ON + 'GENEL NOT: ' + BOLD_OFF + generalNote + LF);
         }
         lines.push(SEP);
         lines.push(CENTER + BOLD_ON + `TOPLAM: ${total.toFixed(2)} TL` + BOLD_OFF + LF);
@@ -1233,7 +1255,6 @@ export default function Panel() {
                                                 <button 
                                                     onClick={() => {
                                                         handleAction('approve_order', { orderId: order.id });
-                                                        printWithQZTray(order.tableId, order.items, order.id, order.note);
                                                     }} 
                                                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold"
                                                 >
@@ -1475,22 +1496,26 @@ export default function Panel() {
                                                         <div className="flex items-center gap-2 bg-white rounded shadow-sm p-1">
                                                             <button 
                                                                 onClick={() => {
-                                                                    if(cartItem && cartItem.qty > 1) {
-                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c));
-                                                                    } else {
-                                                                        setAdminCart(adminCart.filter(c => c.name !== item.name));
-                                                                    }
+                                                                    setAdminCart(prev => {
+                                                                        const existing = prev.find(c => c.name === item.name);
+                                                                        if(existing && existing.qty > 1) {
+                                                                            return prev.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c);
+                                                                        }
+                                                                        return prev.filter(c => c.name !== item.name);
+                                                                    });
                                                                 }}
                                                                 className="w-7 h-7 flex items-center justify-center bg-gray-100 text-brand-red rounded active:scale-95"
                                                             ><i className="fa-solid fa-minus text-xs"></i></button>
                                                             <span className="w-5 text-center font-bold text-gray-800 text-sm">{cartItem ? cartItem.qty : 0}</span>
                                                             <button 
                                                                 onClick={() => {
-                                                                    if(cartItem) {
-                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c));
-                                                                    } else {
-                                                                        setAdminCart([...adminCart, { name: item.name, price: item.price, qty: 1 }]);
-                                                                    }
+                                                                    setAdminCart(prev => {
+                                                                        const existing = prev.find(c => c.name === item.name);
+                                                                        if(existing) {
+                                                                            return prev.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c);
+                                                                        }
+                                                                        return [...prev, { name: item.name, price: item.price, qty: 1 }];
+                                                                    });
                                                                 }}
                                                                 className="w-7 h-7 flex items-center justify-center bg-brand-red text-white rounded active:scale-95"
                                                             ><i className="fa-solid fa-plus text-xs"></i></button>
@@ -1533,22 +1558,26 @@ export default function Panel() {
                                                         <div className="flex items-center gap-2 bg-white rounded shadow-sm p-1">
                                                             <button 
                                                                 onClick={() => {
-                                                                    if(cartItem && cartItem.qty > 1) {
-                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c));
-                                                                    } else {
-                                                                        setAdminCart(adminCart.filter(c => c.name !== item.name));
-                                                                    }
+                                                                    setAdminCart(prev => {
+                                                                        const existing = prev.find(c => c.name === item.name);
+                                                                        if(existing && existing.qty > 1) {
+                                                                            return prev.map(c => c.name === item.name ? {...c, qty: c.qty - 1} : c);
+                                                                        }
+                                                                        return prev.filter(c => c.name !== item.name);
+                                                                    });
                                                                 }}
                                                                 className="w-7 h-7 flex items-center justify-center bg-gray-100 text-brand-red rounded active:scale-95"
                                                             ><i className="fa-solid fa-minus text-xs"></i></button>
                                                             <span className="w-5 text-center font-bold text-gray-800 text-sm">{cartItem ? cartItem.qty : 0}</span>
                                                             <button 
                                                                 onClick={() => {
-                                                                    if(cartItem) {
-                                                                        setAdminCart(adminCart.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c));
-                                                                    } else {
-                                                                        setAdminCart([...adminCart, { name: item.name, price: parseFloat(item.price || '0'), qty: 1 }]);
-                                                                    }
+                                                                    setAdminCart(prev => {
+                                                                        const existing = prev.find(c => c.name === item.name);
+                                                                        if(existing) {
+                                                                            return prev.map(c => c.name === item.name ? {...c, qty: c.qty + 1} : c);
+                                                                        }
+                                                                        return [...prev, { name: item.name, price: parseFloat(item.price || '0'), qty: 1 }];
+                                                                    });
                                                                 }}
                                                                 className="w-7 h-7 flex items-center justify-center bg-brand-red text-white rounded active:scale-95"
                                                             ><i className="fa-solid fa-plus text-xs"></i></button>
@@ -1565,7 +1594,7 @@ export default function Panel() {
                         <div className="p-5 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
                             <div className="flex justify-between items-center mb-4">
                                 <span className="font-bold text-gray-600">Toplam Tutarı:</span>
-                                <span className="text-2xl font-black text-brand-red">{adminCart.reduce((s, c) => s + (c.price * c.qty), 0)} TL</span>
+                                <span className="text-2xl font-black text-brand-red">{adminCart.reduce((s, c) => s + (c.price * c.qty), 0).toFixed(2)} TL</span>
                             </div>
                             <button 
                                 onClick={() => {
