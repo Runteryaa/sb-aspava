@@ -1,20 +1,32 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+export const runtime = 'edge';
+
+const CERT_TEXT = `-----BEGIN CERTIFICATE-----
+MIIDWzCCAkOgAwIBAgIUfDRC975D2hj/xx4dw3dYids6uykwDQYJKoZIhvcNAQEL
+BQAwPTEaMBgGA1UEAwwRU0IgQXNwYXZhIFFaIFRyYXkxEjAQBgNVBAoMCVNCIEFz
+cGF2YTELMAkGA1UEBhMCVFIwHhcNMjYwNzAxMTM1MDE0WhcNMzYwNjI4MTM1MDE0
+WjA9MRowGAYDVQQDDBFTQiBBc3BhdmEgUVogVHJheTESMBAGA1UECgwJU0IgQXNw
+YXZhMQswCQYDVQQGEwJUUjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+AJyg+YkhM1QEgzNKEGzIItZHNEgUyMCEN6D3/Ij8zlj8iBvsxs1NKF5kMGPvHlhv
+GGQLuUEgvbjEXjkTfFiqLuPpbPuEbVuhyuzijCTzqkg69aaLJRG2UV8sBa1gsRB8
+uKBn8OeNAPxmpqtn7639zh3cy94UEIA0MoYclNw0VJZePFrKUd6WU4wMICrdbtJC
+TcFI5/DcigNebQFVrT48ps2tD7uek11Dqgdk8ZhsHDDWaR6ErEEGellTj4YaQbzB
+4NNqcEvPBs8R8doTABR3FdsvT5zXr4RywOm8NAc4e7GAcxEE/MXnqJpmaVq/OW9L
+f+jC52G6PzPVmMDWxHwl5OUCAwEAAaNTMFEwHQYDVR0OBBYEFLZEwTnyhSMFOell
+bVJYPuIRbXdgMB8GA1UdIwQYMBaAFLZEwTnyhSMFOellbVJYPuIRbXdgMA8GA1Ud
+EwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBACaiywcAkX6gz59T7wK/sdg9
+YyrzRtJx990A6enXtV1C+O7dYz4KJKHIYuafdBPYMSWQ4memed6WndaqYuqVODrF
+291QXjGnj++x/OPM6/W+VePaZ75sYXZw7n6yNRQUcO7G3F5L6g8dguWTmweF5/gU
+rVEmRMDFRhysraA9GvTjyDMIq3evmd4POQIonSzyDe6MXP8Yx1Hc5nR08KT1kvNv
+DQoVs71yscFo636eIXvsZj1FSEMx97J+rSLLarb7v1+W0vnaF52/+ZfDJ3ejj3t3
+g84zUpG7WlcRzRuK46CNjKIVmI1q70LkkmTbMUXExOcAAOIgv84mnd02FrIUcog=
+-----END CERTIFICATE-----`;
 
 export async function GET() {
-    try {
-        const certPath = path.join(process.cwd(), 'certificates', 'digital-certificate.txt');
-        if (!fs.existsSync(certPath)) {
-            return new NextResponse('Certificate file not found', { status: 404 });
+    return new Response(CERT_TEXT, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/plain',
+            'Cache-Control': 'public, max-age=3600'
         }
-        const cert = fs.readFileSync(certPath, 'utf8');
-        return new NextResponse(cert, {
-            status: 200,
-            headers: { 'Content-Type': 'text/plain' }
-        });
-    } catch (e: any) {
-        console.error('QZ cert fetch error:', e);
-        return new NextResponse('Failed to fetch certificate: ' + e.message, { status: 500 });
-    }
+    });
 }
