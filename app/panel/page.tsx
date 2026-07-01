@@ -40,8 +40,8 @@ export default function Panel() {
     // QZ Tray states
     const [qzStatus, setQzStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
     const [qzPrinters, setQzPrinters] = useState<string[]>([]);
-    const [selectedPrinter, setSelectedPrinter] = useState<string>(() => localStorage.getItem('qz_printer') || '');
-    const [businessName, setBusinessName] = useState<string>(() => localStorage.getItem('qz_business') || 'SB Aspava');
+    const [selectedPrinter, setSelectedPrinter] = useState<string>('');
+    const [businessName, setBusinessName] = useState<string>('SB Aspava');
     const qzRef = useRef<any>(null);
 
     const unlockAudio = () => {
@@ -161,6 +161,12 @@ export default function Panel() {
     // QZ Tray: Load script and auto-connect
     useEffect(() => {
         if (typeof window === 'undefined') return;
+        // Load saved values from localStorage (safe - only runs client-side)
+        const savedPrinter = localStorage.getItem('qz_printer');
+        const savedBusiness = localStorage.getItem('qz_business');
+        if (savedPrinter) setSelectedPrinter(savedPrinter);
+        if (savedBusiness) setBusinessName(savedBusiness);
+        // Load QZ Tray script
         if ((window as any).qz) { qzRef.current = (window as any).qz; return; }
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js';
@@ -421,9 +427,12 @@ export default function Panel() {
             const pad = Math.max(1, 42 - left.length - right.length);
             lines.push(left + ' '.repeat(pad) + right + LF);
         });
+        if (note) {
+            lines.push(LF);
+            lines.push(BOLD_ON + 'NOT: ' + BOLD_OFF + note + LF);
+        }
         lines.push(SEP);
         lines.push(CENTER + BOLD_ON + `TOPLAM: ${total.toFixed(2)} TL` + BOLD_OFF + LF);
-        if (note) lines.push(LEFT + 'Not: ' + note + LF);
         lines.push(LF + LF);
         lines.push(CUT);
 
