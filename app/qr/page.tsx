@@ -17,7 +17,7 @@ export default function QRMenu() {
     const [tableId, setTableId] = useState<string | null>(null);
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [cart, setCart] = useState<{name: string, price: number, qty: number}[]>([]);
+    const [cart, setCart] = useState<{name: string, price: number, qty: number, note?: string}[]>([]);
     const [cartOpen, setCartOpen] = useState(false);
     const [ordering, setOrdering] = useState(false);
     const [orderNote, setOrderNote] = useState('');
@@ -161,8 +161,12 @@ export default function QRMenu() {
             if (existing) {
                 return prev.map(i => i.name === item.name ? { ...i, qty: i.qty + 1 } : i);
             }
-            return [...prev, { name: item.name, price: Number(item.price), qty: 1 }];
+            return [...prev, { name: item.name, price: Number(item.price), qty: 1, note: '' }];
         });
+    };
+
+    const updateCartItemNote = (name: string, note: string) => {
+        setCart(prev => prev.map(i => i.name === name ? { ...i, note } : i));
     };
 
     const handleAddToCartOrShowOptions = (item: any) => {
@@ -577,18 +581,29 @@ export default function QRMenu() {
                             </button>
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-5 space-y-3">
                             {cart.map((c, i) => (
-                                <div key={i} className="flex justify-between items-center border-b pb-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-lg">
-                                            <button onClick={() => removeFromCart(c)} className="w-6 h-6 bg-white text-brand-red rounded shadow-sm flex items-center justify-center font-bold active:scale-95"><i className="fa-solid fa-minus text-xs"></i></button>
-                                            <span className="font-black text-gray-800 w-5 text-center text-sm">{c.qty}</span>
-                                            <button onClick={() => addToCart(c)} className="w-6 h-6 bg-brand-red text-white rounded shadow-sm flex items-center justify-center font-bold active:scale-95"><i className="fa-solid fa-plus text-xs"></i></button>
+                                <div key={i} className="border-b pb-3 last:border-0 last:pb-0">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-lg">
+                                                <button onClick={() => removeFromCart(c)} className="w-6 h-6 bg-white text-brand-red rounded shadow-sm flex items-center justify-center font-bold active:scale-95"><i className="fa-solid fa-minus text-xs"></i></button>
+                                                <span className="font-black text-gray-800 w-5 text-center text-sm">{c.qty}</span>
+                                                <button onClick={() => addToCart(c)} className="w-6 h-6 bg-brand-red text-white rounded shadow-sm flex items-center justify-center font-bold active:scale-95"><i className="fa-solid fa-plus text-xs"></i></button>
+                                            </div>
+                                            <span className="font-bold text-gray-800">{c.name}</span>
                                         </div>
-                                        <span className="font-bold text-gray-800">{c.name}</span>
+                                        <span className="font-bold text-gray-600 flex-shrink-0 ml-2">{c.price * c.qty} TL</span>
                                     </div>
-                                    <span className="font-bold text-gray-600">{c.price * c.qty} TL</span>
+                                    <div className="mt-1.5 ml-1">
+                                        <input
+                                            type="text"
+                                            value={c.note || ''}
+                                            onChange={(e) => updateCartItemNote(c.name, e.target.value)}
+                                            placeholder={`${c.name} için not... (örn: az acılı)`}
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 focus:ring-1 focus:ring-brand-red outline-none placeholder-gray-400"
+                                        />
+                                    </div>
                                 </div>
                             ))}
                         </div>

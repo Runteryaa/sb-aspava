@@ -426,10 +426,14 @@ export default function Panel() {
             const right = `${itemTotal} TL`;
             const pad = Math.max(1, 42 - left.length - right.length);
             lines.push(left + ' '.repeat(pad) + right + LF);
+            // Ürüne ait not varsa hemen altına yaz
+            if (item.note && item.note.trim()) {
+                lines.push('  >> ' + item.note.trim() + LF);
+            }
         });
         if (note) {
             lines.push(LF);
-            lines.push(BOLD_ON + 'NOT: ' + BOLD_OFF + note + LF);
+            lines.push(BOLD_ON + 'GENEL NOT: ' + BOLD_OFF + note + LF);
         }
         lines.push(SEP);
         lines.push(CENTER + BOLD_ON + `TOPLAM: ${total.toFixed(2)} TL` + BOLD_OFF + LF);
