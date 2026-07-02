@@ -10,6 +10,10 @@ export async function POST(request: Request) {
         
         if (!db || !db.tables) return NextResponse.json({ error: 'DB error' }, { status: 500 });
 
+        if (!Array.isArray(items) || items.length === 0) {
+            return NextResponse.json({ error: 'Sipariş boş olamaz' }, { status: 400 });
+        }
+
         if (!db.tables[tableId] || db.tables[tableId].sessionId !== sessionId) {
             return NextResponse.json({ error: 'Yetkisiz erişim veya masa kapanmış' }, { status: 403 });
         }
